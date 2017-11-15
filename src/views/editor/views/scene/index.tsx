@@ -1,9 +1,9 @@
 import * as React from "react";
+import * as Rx from "rxjs/Rx";
 import * as THREE from "three";
 import Model from "./components/model";
 import { Event } from "three";
 import { getPosition } from "./libs/utils";
-import * as Rx from "rxjs/Rx";
 
 interface IProps {
   width: number;
@@ -15,21 +15,21 @@ interface IProps {
 class Scene extends React.Component<IProps> {
   private activeModel: Model;
   private camera: THREE.Camera;
+  private faceColor$: Rx.Subject<any>;
+  private raycaster: THREE.Raycaster;
   private renderer: THREE.WebGLRenderer;
   private scene: THREE.Scene;
-  private raycaster: THREE.Raycaster;
-  private faceColor$: Rx.Subject<any>;
 
   constructor(props) {
     super(props);
     const { width, height, colors } = props;
-    this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.raycaster = new THREE.Raycaster();
+    this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setClearColor(colors.bg);
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(devicePixelRatio);
+    this.scene = new THREE.Scene();
 
     this.faceColor$ = new Rx.Subject();
     this.faceColor$
@@ -76,11 +76,17 @@ class Scene extends React.Component<IProps> {
       false
     );
     if (intersects.length > 0) {
-      this.activeModel.geometry.faces
-        .filter(face => !face.color.equals(this.activeModel.faceHighlightColor))
-        .forEach(face => {
-          this.faceColor$.next([face, this.props.colors.faceHighlight]);
-        });
+      this.activeModel.geometry.faces.forEach(face => {
+        if (face.normal.equals(intersects[0].face.normal)) {
+          if (!face.color.equals(this.activeModel.faceHighlightColor)) {
+            this.faceColor$.next([face, this.props.colors.faceHighlight]);
+          }
+        } else {
+          if (!face.color.equals(this.activeModel.faceColor)) {
+            this.faceColor$.next([face, this.props.colors.face]);
+          }
+        }
+      });
     } else {
       this.activeModel.geometry.faces
         .filter(face => !face.color.equals(this.activeModel.faceColor))
@@ -88,9 +94,11 @@ class Scene extends React.Component<IProps> {
           this.faceColor$.next([face, this.props.colors.face]);
         });
     }
+    // TODO: send a done/commit signal, so it doesn't need to debounce
   };
 
   render3 = () => {
+    console.log("render");
     this.renderer.render(this.scene, this.camera);
   };
 
