@@ -23,6 +23,7 @@ class Scene extends React.Component<IProps> {
   private scene: THREE.Scene = new THREE.Scene();
   private plane: THREE.Plane = new THREE.Plane();
   private planeIntersection: THREE.Vector3 = new THREE.Vector3();
+  private activeIntersection: THREE.Intersection;
 
   constructor(props) {
     super(props);
@@ -77,8 +78,9 @@ class Scene extends React.Component<IProps> {
       false
     );
     if (intersects.length > 0) {
+      this.activeIntersection = intersects[0];
       this.activeModel.geometry.faces.forEach(face => {
-        if (face.normal.equals(intersects[0].face.normal)) {
+        if (face.normal.equals(this.activeIntersection.face.normal)) {
           if (!face.color.equals(this.activeModel.faceHighlightColor)) {
             this.faceColor$.next([face, this.props.colors.faceHighlight]);
           }
@@ -97,6 +99,7 @@ class Scene extends React.Component<IProps> {
         }
       }
     } else {
+      this.activeIntersection = undefined;
       this.activeModel.geometry.faces
         .filter(face => !face.color.equals(this.activeModel.faceColor))
         .forEach(face => {
@@ -112,6 +115,9 @@ class Scene extends React.Component<IProps> {
 
   handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
     this.mouseDown = true;
+    if (this.activeIntersection) {
+      console.log("DOWN");
+    }
   };
 
   render3 = () => {
