@@ -13,7 +13,7 @@ class Editor extends React.Component<IProps> {
   render() {
     return (
       <div id="editor">
-        <Scene colors={Config.colors} {...this.props} />,
+        <Scene colors={Config.colors} {...this.props} />
         <Controls />
       </div>
     );

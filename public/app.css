@@ -27,3 +27,19 @@ body {
   height: 100vh;
   overflow: hidden;
 }
+
+#container {
+  position: relative;
+}
+
+.measurement {
+  display: inline-block;
+  position: absolute;
+  z-index: 2;
+  background: #111;
+  color: white;
+  padding: 5px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: Menlo;
+}

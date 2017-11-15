@@ -4,6 +4,7 @@ import * as THREE from "three";
 import Model from "./components/model";
 import { Event } from "three";
 import { getPosition } from "./libs/utils";
+import Measurement from "./components/measurement";
 
 interface IProps {
   width: number;
@@ -15,23 +16,23 @@ interface IProps {
 class Scene extends React.Component<IProps> {
   private activeModel: Model;
   private camera: THREE.Camera;
-  private faceColor$: Rx.Subject<any>;
-  private raycaster: THREE.Raycaster;
   private renderer: THREE.WebGLRenderer;
-  private scene: THREE.Scene;
+  private mouseDown: Boolean = false;
+  private faceColor$: Rx.Subject<any> = new Rx.Subject();
+  private raycaster: THREE.Raycaster = new THREE.Raycaster();
+  private scene: THREE.Scene = new THREE.Scene();
+  private plane: THREE.Plane = new THREE.Plane();
+  private planeIntersection: THREE.Vector3 = new THREE.Vector3();
 
   constructor(props) {
     super(props);
     const { width, height, colors } = props;
     this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-    this.raycaster = new THREE.Raycaster();
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setClearColor(colors.bg);
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(devicePixelRatio);
-    this.scene = new THREE.Scene();
 
-    this.faceColor$ = new Rx.Subject();
     this.faceColor$
       .map(([face, color]) => face.color.setHex(color))
       .debounceTime(20)
@@ -87,6 +88,14 @@ class Scene extends React.Component<IProps> {
           }
         }
       });
+
+      if (this.mouseDown) {
+        if (
+          this.raycaster.ray.intersectPlane(this.plane, this.planeIntersection)
+        ) {
+          console.log("mouse down and over");
+        }
+      }
     } else {
       this.activeModel.geometry.faces
         .filter(face => !face.color.equals(this.activeModel.faceColor))
@@ -97,6 +106,14 @@ class Scene extends React.Component<IProps> {
     // TODO: send a done/commit signal, so it doesn't need to debounce
   };
 
+  handleMouseUp = (event: React.MouseEvent<HTMLDivElement>) => {
+    this.mouseDown = false;
+  };
+
+  handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
+    this.mouseDown = true;
+  };
+
   render3 = () => {
     console.log("render");
     this.renderer.render(this.scene, this.camera);
@@ -104,7 +121,16 @@ class Scene extends React.Component<IProps> {
 
   render() {
     return (
-      <div id="container" ref="container" onMouseMove={this.handleMouseMove} />
+      <div
+        id="container"
+        ref="container"
+        onMouseUp={this.handleMouseUp}
+        onMouseDown={this.handleMouseDown}
+        onMouseMove={this.handleMouseMove}
+      >
+        <Measurement title="width" value={100} x={20} y={30} />
+        <Measurement title="height" value={220} x={20} y={60} />
+      </div>
     );
   }
 }

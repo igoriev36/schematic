@@ -1,10 +1,13 @@
 {
   "name": "schematic",
   "version": "0.0.1",
+  "homepage": "https://johnrees.github.io/schematic/",
   "scripts": {
     "start": "webpack-dev-server",
     "test": "jest",
-    "lint": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css}\""
+    "lint": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css}\"",
+    "build": "cp -R public dist && PRODUCTION=true webpack -p",
+    "deploy": "npm run build && ghpages -p dist && rm -rf dist"
   },
   "keywords": [
     "editor",
@@ -25,6 +28,7 @@
     "babel-preset-env": "^1.6.1",
     "enzyme": "^3.2.0",
     "enzyme-adapter-react-16": "^1.1.0",
+    "ghpages": "^0.0.10",
     "jest": "^21.2.1",
     "ts-jest": "^21.2.2",
     "ts-loader": "^3.1.1",
