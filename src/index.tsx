@@ -20,7 +20,6 @@ const render = () =>
       width={window.innerWidth}
       height={window.innerHeight}
       devicePixelRatio={window.devicePixelRatio}
-      bgColor={0x111111}
     />,
     rootEl
   );
