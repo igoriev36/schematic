@@ -1,6 +1,8 @@
 import * as React from "react";
 import * as THREE from "three";
 import Model from "./components/model";
+import { Event } from "three";
+import { getPosition } from "./libs/utils";
 
 interface IProps {
   width: number;
@@ -11,9 +13,10 @@ interface IProps {
 
 class Editor extends React.Component<IProps> {
   // activeModel:Model;
-  camera: THREE.Camera;
-  renderer: THREE.WebGLRenderer;
-  scene: THREE.Scene;
+  private camera: THREE.Camera;
+  private renderer: THREE.WebGLRenderer;
+  private scene: THREE.Scene;
+  private raycaster: THREE.Raycaster;
 
   constructor(props) {
     super(props);
@@ -40,12 +43,24 @@ class Editor extends React.Component<IProps> {
     this.render3();
   }
 
+  handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    const [x, y] = getPosition(
+      event.clientX,
+      event.clientY,
+      this.props.width,
+      this.props.height
+    );
+    console.log(x);
+  };
+
   render3 = () => {
     this.renderer.render(this.scene, this.camera);
   };
 
   render() {
-    return <div id="container" ref="container" />;
+    return (
+      <div id="container" ref="container" onMouseMove={this.handleMouseMove} />
+    );
   }
 }
 
