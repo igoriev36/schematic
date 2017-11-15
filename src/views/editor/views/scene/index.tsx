@@ -10,7 +10,6 @@ interface IProps {
   height: number;
   devicePixelRatio: number;
   colors: any;
-  signal: any;
 }
 
 class Scene extends React.Component<IProps> {
@@ -23,7 +22,7 @@ class Scene extends React.Component<IProps> {
 
   constructor(props) {
     super(props);
-    const { width, height, colors, signal } = props;
+    const { width, height, colors } = props;
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -31,7 +30,6 @@ class Scene extends React.Component<IProps> {
     this.renderer.setClearColor(colors.bg);
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(devicePixelRatio);
-    signal.add(this.onSignal);
 
     this.faceColor$ = new Rx.Subject();
     this.faceColor$
@@ -43,13 +41,6 @@ class Scene extends React.Component<IProps> {
       });
   }
 
-  onSignal = (face, color) => {
-    face.color.setHex(color);
-    this.activeModel.geometry.colorsNeedUpdate = true;
-    // TODO: debounce this, with RXJS?
-    requestAnimationFrame(this.render3);
-  };
-
   componentWillUnmount() {
     this.faceColor$.unsubscribe();
   }
@@ -57,7 +48,10 @@ class Scene extends React.Component<IProps> {
   componentDidMount() {
     (this.refs.container as HTMLElement).appendChild(this.renderer.domElement);
 
-    const model = new Model(this.props.colors.face, this.props.colors.faceHighlight);
+    const model = new Model(
+      this.props.colors.face,
+      this.props.colors.faceHighlight
+    );
     this.activeModel = model;
     this.scene.add(model.mesh);
 
@@ -86,15 +80,12 @@ class Scene extends React.Component<IProps> {
         .filter(face => !face.color.equals(this.activeModel.faceHighlightColor))
         .forEach(face => {
           this.faceColor$.next([face, this.props.colors.faceHighlight]);
-          // this.props.signal.dispatch(face, this.props.colors.faceHighlight);
         });
     } else {
       this.activeModel.geometry.faces
         .filter(face => !face.color.equals(this.activeModel.faceColor))
-        // .filter(face => face.color.getHex() !== this.props.colors.face)
         .forEach(face => {
           this.faceColor$.next([face, this.props.colors.face]);
-          // this.props.signal.dispatch(face, this.props.colors.face);
         });
     }
   };
