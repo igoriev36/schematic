@@ -6,9 +6,6 @@ describe("reducers", () => {
       expect(data(undefined, {})).toEqual({ count: 0 });
     });
     it("handles INCREMENT action", () => {
-      expect(data({}, { type: "INCREMENT" })).toEqual({ count: 2 });
-    });
-    it("handles INCREMENT action", () => {
       expect(data({ count: 1 }, { type: "INCREMENT" })).toEqual({ count: 2 });
     });
     it("handles DECREMENT action", () => {

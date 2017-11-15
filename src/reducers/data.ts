@@ -2,16 +2,16 @@ type Action = {
   type?: "INCREMENT" | "DECREMENT";
 };
 
-export interface Data {
+export interface IData {
   readonly count?: number;
 }
 
 export default (
-  state: Data = {
+  state: IData = {
     count: 0
   },
   action: Action
-): Data => {
+): IData => {
   switch (action.type) {
     case "INCREMENT":
       return { ...state, count: state.count + 1 };

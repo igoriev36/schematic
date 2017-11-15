@@ -1,8 +1,8 @@
-import data, { Data } from "./data";
+import data, { IData } from "./data";
 import { combineReducers } from "redux";
 
 export interface IStore {
-  data: Data;
+  data: IData;
 }
 
 export default combineReducers({
