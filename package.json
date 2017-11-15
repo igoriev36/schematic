@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "scripts": {
     "start": "webpack-dev-server",
-    "test": "jest"
+    "test": "jest",
+    "lint": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css}\""
   },
   "keywords": [
     "editor",
