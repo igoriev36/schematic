@@ -1,5 +1,5 @@
 import * as React from "react";
-import App from "./app";
+import Counter from ".";
 import { shallow } from "enzyme";
 
 function setup(count = 0) {
@@ -7,7 +7,7 @@ function setup(count = 0) {
     onIncrement: jest.fn(),
     onDecrement: jest.fn()
   };
-  const component = shallow(<App count={count} {...actions} />);
+  const component = shallow(<Counter count={count} {...actions} />);
 
   return {
     component,

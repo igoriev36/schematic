@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import App from "./containers/app";
+import Counter from "./views/counter";
 import reducers, { IStore } from "./reducers";
 import { createStore, Store } from "redux";
 
@@ -9,7 +9,7 @@ const rootEl = document.getElementById("main");
 
 const render = () =>
   ReactDOM.render(
-    <App
+    <Counter
       count={(store.getState() as IStore).data.count}
       onIncrement={() => store.dispatch({ type: "INCREMENT" })}
       onDecrement={() => store.dispatch({ type: "DECREMENT" })}
