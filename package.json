@@ -33,10 +33,12 @@
     "webpack-dev-server": "^2.9.4"
   },
   "dependencies": {
+    "mini-signals": "^1.2.0",
     "react": "^16.1.1",
     "react-dom": "^16.1.1",
     "react-redux": "^5.0.6",
     "redux": "^3.7.2",
+    "rxjs": "^5.5.2",
     "three": "^0.88.0"
   },
   "jest": {
