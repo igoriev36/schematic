@@ -14,7 +14,16 @@ const rootEl = document.getElementById("main");
   onDecrement={() => store.dispatch({ type: "DECREMENT" })}
 />, */
 
-const render = () => ReactDOM.render(<Editor />, rootEl);
+const render = () =>
+  ReactDOM.render(
+    <Editor
+      width={window.innerWidth}
+      height={window.innerHeight}
+      devicePixelRatio={window.devicePixelRatio}
+      bgColor={0x111111}
+    />,
+    rootEl
+  );
 
 render();
 store.subscribe(render);
