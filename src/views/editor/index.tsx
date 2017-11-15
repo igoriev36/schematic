@@ -1,7 +1,10 @@
 import * as React from "react";
 import * as THREE from "three";
+import Model from "./components/model";
 
 class Editor extends React.Component {
+  // activeModel:Model;
+
   componentDidMount() {
     const scene = new THREE.Scene();
     const { innerWidth: width, innerHeight: height, devicePixelRatio } = window;
@@ -12,18 +15,13 @@ class Editor extends React.Component {
     renderer.setPixelRatio(devicePixelRatio);
     (this.refs.container as HTMLElement).appendChild(renderer.domElement);
     //
-    const geometry = new THREE.BoxGeometry(2, 2, 2);
-    const material = new THREE.MeshBasicMaterial({
-      color: "red",
-      wireframe: true
-    });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
+    const model = new Model();
+    scene.add(model.mesh);
     //
     camera.position.x = 10;
     camera.position.y = 10;
     camera.position.z = 10;
-    camera.lookAt(cube.position);
+    camera.lookAt(new THREE.Vector3(0, 0, 0));
     //
     renderer.render(scene, camera);
   }
