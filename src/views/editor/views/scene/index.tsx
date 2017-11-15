@@ -5,6 +5,7 @@ import Model from "./components/model";
 import { Event } from "three";
 import { getPosition } from "./libs/utils";
 import Measurement from "./components/measurement";
+import Axes from "./components/axes";
 
 interface IProps {
   width: number;
@@ -49,6 +50,8 @@ class Scene extends React.Component<IProps> {
 
   componentDidMount() {
     (this.refs.container as HTMLElement).appendChild(this.renderer.domElement);
+
+    this.scene.add(new Axes(10));
 
     const model = new Model(
       this.props.colors.face,
