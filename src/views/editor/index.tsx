@@ -12,7 +12,7 @@ interface IProps {
 }
 
 class Editor extends React.Component<IProps> {
-  // activeModel:Model;
+  private activeModel: Model;
   private camera: THREE.Camera;
   private renderer: THREE.WebGLRenderer;
   private scene: THREE.Scene;
@@ -24,6 +24,7 @@ class Editor extends React.Component<IProps> {
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    this.raycaster = new THREE.Raycaster();
     this.renderer.setClearColor(bgColor);
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(devicePixelRatio);
@@ -33,6 +34,7 @@ class Editor extends React.Component<IProps> {
     (this.refs.container as HTMLElement).appendChild(this.renderer.domElement);
     //
     const model = new Model();
+    this.activeModel = model;
     this.scene.add(model.mesh);
     //
     this.camera.position.x = 10;
@@ -50,7 +52,11 @@ class Editor extends React.Component<IProps> {
       this.props.width,
       this.props.height
     );
-    console.log(x);
+    this.raycaster.setFromCamera({ x, y }, this.camera);
+    const intersects = this.raycaster.intersectObject(
+      this.activeModel.mesh,
+      false
+    );
   };
 
   render3 = () => {
