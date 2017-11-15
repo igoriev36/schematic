@@ -6,7 +6,7 @@ class Editor extends React.Component {
     const scene = new THREE.Scene();
     const { innerWidth: width, innerHeight: height, devicePixelRatio } = window;
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer();
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setClearColor(0x111111);
     renderer.setSize(width, height);
     renderer.setPixelRatio(devicePixelRatio);
@@ -19,6 +19,11 @@ class Editor extends React.Component {
     });
     const cube = new THREE.Mesh(geometry, material);
     scene.add(cube);
+    //
+    camera.position.x = 10;
+    camera.position.y = 10;
+    camera.position.z = 10;
+    camera.lookAt(cube.position);
     //
     renderer.render(scene, camera);
   }
