@@ -1,2 +1,6 @@
 dist/
 node_modules/
+*.swp
+npm-debug.log
+coverage/
+.vscode
