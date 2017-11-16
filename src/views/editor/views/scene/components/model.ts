@@ -6,11 +6,22 @@ class Model {
   mesh: THREE.Mesh;
   faceColor: THREE.Color;
   faceHighlightColor: THREE.Color;
-  private edgesGeometry: THREE.EdgesGeometry;
+  edgesGeometry: THREE.EdgesGeometry;
   private lineSegments: THREE.LineSegments;
 
-  constructor(faceColor, faceHighlightColor) {
-    this.geometry = new THREE.BoxGeometry(2, 2, 2);
+  constructor(edges: number[][], faceColor, faceHighlightColor) {
+    const shape = new THREE.Shape();
+    edges.forEach(([x, y], index) => {
+      if (index == 0) shape.moveTo(x, y);
+      else shape.lineTo(x, y);
+    });
+    const extrudeSettings = {
+      amount: 5,
+      bevelEnabled: false,
+      steps: 1
+    };
+    this.geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+    // this.geometry = new THREE.BoxGeometry(2, 2, 2);
     this.geometry.translate(0, 1, 0);
     this.mesh = new THREE.Mesh(this.geometry, faceMaterial);
     this.faceColor = new THREE.Color(faceColor);

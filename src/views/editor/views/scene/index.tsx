@@ -8,6 +8,7 @@ import { Event } from "three";
 import { getPosition } from "./libs/utils";
 import DebugPlane from "./components/debug_plane";
 import DebugArrows from "./components/debug_arrows";
+import { lineMaterial } from "./materials";
 
 interface IProps {
   width: number;
@@ -37,6 +38,8 @@ class Scene extends React.Component<IProps, IState> {
   private clickPoint: THREE.Vector3;
   private debugPlane = DebugPlane();
   private debugArrows = DebugArrows();
+  private line: THREE.Line3 = new THREE.Line3();
+  private lineHelper: THREE.Line = new THREE.Line();
 
   Tools = {
     EXTRUDE: "Extrude"
@@ -67,6 +70,12 @@ class Scene extends React.Component<IProps, IState> {
 
     this.scene.add(this.debugPlane);
 
+    var lineGeometry = new THREE.Geometry();
+    lineGeometry.vertices.push(new THREE.Vector3(0, 0, 0));
+    lineGeometry.vertices.push(new THREE.Vector3(0, 0, 0));
+    this.lineHelper = new THREE.Line(lineGeometry, lineMaterial);
+    this.scene.add(this.lineHelper);
+
     this.vertices$
       .map(([vector, cloned, toAdd]) => vector.copy(cloned.add(toAdd)))
       // .debounceTime(1)
@@ -95,6 +104,7 @@ class Scene extends React.Component<IProps, IState> {
     this.scene.add(new Axes(10));
 
     const model = new Model(
+      [[0, 0], [2, 0], [2, 2], [1, 3], [0, 2]],
       this.props.colors.face,
       this.props.colors.faceHighlight
     );
@@ -125,17 +135,70 @@ class Scene extends React.Component<IProps, IState> {
     if (intersects.length > 0) {
       this.activeIntersection = intersects[0];
 
-      this.activeModel.geometry.faces.forEach(face => {
-        if (face.normal.equals(this.activeIntersection.face.normal)) {
-          if (!face.color.equals(this.activeModel.faceHighlightColor)) {
-            this.faceColor$.next([face, this.props.colors.faceHighlight]);
-          }
-        } else {
-          if (!face.color.equals(this.activeModel.faceColor)) {
-            this.faceColor$.next([face, this.props.colors.face]);
-          }
+      // highlight closest edge
+      const positions = this.activeModel.edgesGeometry.getAttribute("position")
+        .array as number[];
+      let minDistance = Infinity;
+      let j = undefined;
+      for (let i = 0; i < positions.length; i += 2) {
+        this.line.start.fromArray(positions, i * 3);
+        this.line.end.fromArray(positions, i * 3 + 3);
+        let closestPoint = this.line.closestPointToPoint(
+          this.activeIntersection.point
+        );
+        let distance = closestPoint.distanceTo(this.activeIntersection.point);
+        if (distance < minDistance) {
+          minDistance = distance;
+          j = i;
         }
-      });
+      }
+
+      j *= 3;
+
+      let needsUpdate = false;
+      // prettier-ignore
+      if (minDistance < 0.08) {
+        this.lineHelper.visible = true;
+        // (this.lineHelper.geometry as THREE.Geometry).vertices[0] = new THREE.Vector3().fromArray(positions, j*3);
+        if (
+          (this.lineHelper.geometry as THREE.Geometry).vertices[0].x !== positions[j] ||
+          (this.lineHelper.geometry as THREE.Geometry).vertices[0].y !== positions[j+1] ||
+          (this.lineHelper.geometry as THREE.Geometry).vertices[0].z !== positions[j+2]
+        ) {
+          needsUpdate = true;
+          (this.lineHelper.geometry as THREE.Geometry).vertices[0] = new THREE.Vector3().fromArray(positions, j);
+        }
+        // (this.lineHelper.geometry as THREE.Geometry).vertices[1] = new THREE.Vector3().fromArray(positions, j*3+3);
+        if (
+          (this.lineHelper.geometry as THREE.Geometry).vertices[1].x !== positions[j+3] ||
+          (this.lineHelper.geometry as THREE.Geometry).vertices[1].y !== positions[j+4] ||
+          (this.lineHelper.geometry as THREE.Geometry).vertices[1].z !== positions[j+5]
+        ) {
+          needsUpdate = true;
+          (this.lineHelper.geometry as THREE.Geometry).vertices[1] = new THREE.Vector3().fromArray(positions, j+3);
+        }
+        if (needsUpdate) {
+          (this.lineHelper.geometry as THREE.Geometry).verticesNeedUpdate = true;
+          requestAnimationFrame(this.render3);
+        }
+
+      } else {
+        this.lineHelper.visible = false;
+
+        // highlight active face
+        this.activeModel.geometry.faces.forEach(face => {
+          if (face.normal.equals(this.activeIntersection.face.normal)) {
+            if (!face.color.equals(this.activeModel.faceHighlightColor)) {
+              this.faceColor$.next([face, this.props.colors.faceHighlight]);
+            }
+          } else {
+            if (!face.color.equals(this.activeModel.faceColor)) {
+              this.faceColor$.next([face, this.props.colors.face]);
+            }
+          }
+        });
+      }
+
       if (this.mouseDown) {
         if (
           this.raycaster.ray.intersectPlane(this.plane, this.planeIntersection)
@@ -203,7 +266,7 @@ class Scene extends React.Component<IProps, IState> {
   };
 
   render3 = () => {
-    // console.log("render");
+    console.log("render");
     this.renderer.render(this.scene, this.camera);
   };
 
