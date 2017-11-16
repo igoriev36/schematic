@@ -9,6 +9,7 @@ class Model {
 
   constructor(faceColor: number, faceHighlightColor: number) {
     this.geometry = new THREE.BoxGeometry(2, 2, 2);
+    this.geometry.translate(0, 1, 0);
     this.material = new THREE.MeshBasicMaterial({
       color: faceColor,
       vertexColors: THREE.FaceColors
