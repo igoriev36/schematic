@@ -1,6 +1,7 @@
 import * as React from "react";
 import Scene from "./views/scene";
 import Controls from "./views/controls";
+import StatusBar from "./views/status_bar";
 import Config from "./config";
 
 interface IProps {
@@ -14,7 +15,8 @@ class Editor extends React.Component<IProps> {
     return (
       <div id="editor">
         <Scene colors={Config.colors} {...this.props} />
-        <Controls />
+        <Controls />,
+        <StatusBar helpText="This is help text" />
       </div>
     );
   }

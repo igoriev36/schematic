@@ -16,7 +16,7 @@ body {
 #controls {
   background: white;
   position: fixed;
-  bottom: 20px;
+  bottom: 60px;
   right: 20px;
   display: inline-block;
   padding: 10px;
@@ -42,4 +42,13 @@ body {
   border-radius: 4px;
   font-size: 11px;
   font-family: Menlo;
+}
+
+#status-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 10px;
+  background: #CCC;
 }

@@ -1,11 +1,11 @@
 import * as React from "react";
 import * as Rx from "rxjs/Rx";
 import * as THREE from "three";
+import Axes from "./components/axes";
+import Measurement from "./components/measurement";
 import Model from "./components/model";
 import { Event } from "three";
 import { getPosition } from "./libs/utils";
-import Measurement from "./components/measurement";
-import Axes from "./components/axes";
 
 interface IProps {
   width: number;
@@ -14,18 +14,38 @@ interface IProps {
   colors: any;
 }
 
-class Scene extends React.Component<IProps> {
+interface IState {
+  tool: string;
+}
+
+class Scene extends React.Component<IProps, IState> {
+  private activeIntersection: THREE.Intersection;
   private activeModel: Model;
+  private activeVertices: Set<THREE.Vector3> = new Set();
   private camera: THREE.Camera;
-  private renderer: THREE.WebGLRenderer;
-  private mouseDown: Boolean = false;
   private faceColor$: Rx.Subject<any> = new Rx.Subject();
-  private vertices$: Rx.Subject<any> = new Rx.Subject();
-  private raycaster: THREE.Raycaster = new THREE.Raycaster();
-  private scene: THREE.Scene = new THREE.Scene();
+  private mouseDown: Boolean = false;
   private plane: THREE.Plane = new THREE.Plane();
   private planeIntersection: THREE.Vector3 = new THREE.Vector3();
-  private activeIntersection: THREE.Intersection;
+  private raycaster: THREE.Raycaster = new THREE.Raycaster();
+  private renderer: THREE.WebGLRenderer;
+  private scene: THREE.Scene = new THREE.Scene();
+  private vertices$: Rx.Subject<any> = new Rx.Subject();
+
+  Tools = {
+    EXTRUDE: "Extrude"
+  };
+
+  state: IState = {
+    tool: this.Tools.EXTRUDE
+  };
+
+  set tool(newTool) {
+    this.setState(prevState => {
+      prevState.tool = newTool;
+      return prevState;
+    });
+  }
 
   constructor(props) {
     super(props);
@@ -37,17 +57,12 @@ class Scene extends React.Component<IProps> {
     this.renderer.setPixelRatio(devicePixelRatio);
 
     this.vertices$
-      .map(([geometry, vertexIndex, normal, distance]) => [
-        geometry,
-        geometry.vertices[vertexIndex].addScaledVector(normal, distance)
-      ])
+      .map(([vertex, normal, distance]) =>
+        vertex.addScaledVector(normal, distance)
+      )
       .debounceTime(20)
-      .subscribe(([geometry, vertex]) => {
-        geometry.verticesNeedUpdate = true;
-        geometry.computeBoundingSphere();
-        geometry.computeBoundingBox();
-        geometry.computeFlatVertexNormals();
-        geometry.mergeVertices();
+      .subscribe(vertex => {
+        this.activeModel.updateGeometry();
         requestAnimationFrame(this.render3);
       });
 
@@ -55,7 +70,7 @@ class Scene extends React.Component<IProps> {
       .map(([face, color]) => face.color.setHex(color))
       .debounceTime(20)
       .subscribe(result => {
-        this.activeModel.geometry.colorsNeedUpdate = true;
+        this.activeModel.updateMaterials();
         requestAnimationFrame(this.render3);
       });
   }
@@ -97,11 +112,16 @@ class Scene extends React.Component<IProps> {
       this.activeModel.mesh,
       false
     );
+
     if (intersects.length > 0) {
       this.activeIntersection = intersects[0];
       this.activeModel.geometry.faces.forEach(face => {
         if (face.normal.equals(this.activeIntersection.face.normal)) {
           if (!face.color.equals(this.activeModel.faceHighlightColor)) {
+            this.activeVertices.add(this.activeModel.geometry.vertices[face.a]);
+            this.activeVertices.add(this.activeModel.geometry.vertices[face.b]);
+            this.activeVertices.add(this.activeModel.geometry.vertices[face.c]);
+
             this.faceColor$.next([face, this.props.colors.faceHighlight]);
           }
         } else {
@@ -110,7 +130,6 @@ class Scene extends React.Component<IProps> {
           }
         }
       });
-
       if (this.mouseDown) {
         if (
           this.raycaster.ray.intersectPlane(this.plane, this.planeIntersection)
@@ -119,6 +138,8 @@ class Scene extends React.Component<IProps> {
         }
       }
     } else {
+      this.activeVertices.clear();
+
       this.activeIntersection = undefined;
       this.activeModel.geometry.faces
         .filter(face => !face.color.equals(this.activeModel.faceColor))
@@ -126,30 +147,28 @@ class Scene extends React.Component<IProps> {
           this.faceColor$.next([face, this.props.colors.face]);
         });
     }
+
     // TODO: send a done/commit signal, so it doesn't need to debounce
   };
 
   handleMouseUp = (event: React.MouseEvent<HTMLDivElement>) => {
     this.mouseDown = false;
+    this.activeVertices.clear();
   };
 
   handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
     this.mouseDown = true;
     if (this.activeIntersection) {
-      const { a, b, c } = this.activeIntersection.face;
-      [a, b, c].map(i => {
-        this.vertices$.next([
-          this.activeModel.geometry,
-          i,
-          this.activeIntersection.face.normal,
-          1
-        ]);
+      const { face } = this.activeIntersection;
+      this.activeVertices.forEach(vertex => {
+        console.log(vertex);
+        this.vertices$.next([vertex, face.normal, 1]);
       });
     }
   };
 
   render3 = () => {
-    console.log("render");
+    // console.log("render");
     this.renderer.render(this.scene, this.camera);
   };
 
