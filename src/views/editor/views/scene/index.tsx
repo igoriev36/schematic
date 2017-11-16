@@ -20,6 +20,7 @@ class Scene extends React.Component<IProps> {
   private renderer: THREE.WebGLRenderer;
   private mouseDown: Boolean = false;
   private faceColor$: Rx.Subject<any> = new Rx.Subject();
+  private vertices$: Rx.Subject<any> = new Rx.Subject();
   private raycaster: THREE.Raycaster = new THREE.Raycaster();
   private scene: THREE.Scene = new THREE.Scene();
   private plane: THREE.Plane = new THREE.Plane();
@@ -35,6 +36,21 @@ class Scene extends React.Component<IProps> {
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(devicePixelRatio);
 
+    this.vertices$
+      .map(([geometry, vertexIndex, normal, distance]) => [
+        geometry,
+        geometry.vertices[vertexIndex].addScaledVector(normal, distance)
+      ])
+      .debounceTime(20)
+      .subscribe(([geometry, vertex]) => {
+        geometry.verticesNeedUpdate = true;
+        geometry.computeBoundingSphere();
+        geometry.computeBoundingBox();
+        geometry.computeFlatVertexNormals();
+        geometry.mergeVertices();
+        requestAnimationFrame(this.render3);
+      });
+
     this.faceColor$
       .map(([face, color]) => face.color.setHex(color))
       .debounceTime(20)
@@ -46,6 +62,7 @@ class Scene extends React.Component<IProps> {
 
   componentWillUnmount() {
     this.faceColor$.unsubscribe();
+    this.vertices$.unsubscribe();
   }
 
   componentDidMount() {
@@ -119,7 +136,15 @@ class Scene extends React.Component<IProps> {
   handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
     this.mouseDown = true;
     if (this.activeIntersection) {
-      console.log("DOWN");
+      const { a, b, c } = this.activeIntersection.face;
+      [a, b, c].map(i => {
+        this.vertices$.next([
+          this.activeModel.geometry,
+          i,
+          this.activeIntersection.face.normal,
+          1
+        ]);
+      });
     }
   };
 
