@@ -7,9 +7,12 @@ import {
   angle,
   rotateAroundPoint
 } from "./point";
+
 import { loopifyInPairs } from "./list";
+import { offset } from "./clipper";
 
 const pointDistance = 15;
+const finWidth = 12.5;
 
 interface Line {
   subPoints: Point[];
@@ -20,12 +23,15 @@ interface Line {
 }
 
 class Wren {
+  innerPoints: Point[];
+  outerPoints: Point[];
   points: Point[];
-  midpoints: Point[];
   lines: Line[];
 
   constructor(points) {
-    this.points = points;
+    this.points = offset(points, { DELTA: 0 });
+    this.outerPoints = offset(points, { DELTA: finWidth });
+    this.innerPoints = offset(points, { DELTA: -finWidth });
     this.lines = this.calculateLines(points);
   }
 
@@ -49,7 +55,7 @@ class Wren {
         angle: lineAngle,
         subPoints,
         offsetPoints: subPoints.map(point =>
-          rotateAroundPoint(point, lineAngle)([point[0], point[1] + 20])
+          rotateAroundPoint(point, lineAngle)([point[0], point[1] + finWidth])
         ),
         length,
         midPoint: [1, 1]

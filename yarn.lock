@@ -1088,6 +1088,16 @@ cipher-base@^1.0.0, cipher-base@^1.0.1, cipher-base@^1.0.3:
     inherits "^2.0.1"
     safe-buffer "^5.0.1"
 
+clipper-js@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/clipper-js/-/clipper-js-1.0.2.tgz#e44891dde6542cc7d0bcc6ef9684d45905714893"
+  dependencies:
+    clipper-lib "^6.2.1"
+
+clipper-lib@^6.2.1:
+  version "6.2.1"
+  resolved "https://registry.yarnpkg.com/clipper-lib/-/clipper-lib-6.2.1.tgz#266d8ec7575c589f05f23e9cd003de50e23117b6"
+
 cliui@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/cliui/-/cliui-2.1.0.tgz#4b475760ff80264c762c3a1719032e91c7fea0d1"

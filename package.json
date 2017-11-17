@@ -37,6 +37,7 @@
     "webpack-dev-server": "^2.9.4"
   },
   "dependencies": {
+    "clipper-js": "^1.0.2",
     "react": "^16.1.1",
     "react-dom": "^16.1.1",
     "react-redux": "^5.0.6",
@@ -45,7 +46,9 @@
     "three": "^0.88.0"
   },
   "jest": {
-    "setupFiles": ["<rootDir>/jest_shim.js"],
+    "setupFiles": [
+      "<rootDir>/jest_shim.js"
+    ],
     "setupTestFrameworkScriptFile": "<rootDir>/enzyme_setup.js",
     "transform": {
       "^.+\\.tsx?$": "<rootDir>/node_modules/ts-jest/preprocessor.js"

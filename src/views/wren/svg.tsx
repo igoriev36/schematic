@@ -15,8 +15,10 @@ class SVG extends React.Component<IProps> {
     console.log(wren);
     return (
       <svg>
+        {wren.outerPoints.map(this.circle(2))}
         {wren.points.map(this.circle(3))}
-        {/* {wren.midpoints.map(this.circle(4))} */}
+        {wren.innerPoints.map(this.circle(2))}
+
         {wren.lines.map(line => line.subPoints.map(this.circle(1)))}
         {wren.lines.map(line => line.offsetPoints.map(this.circle(1)))}
       </svg>
