@@ -7,10 +7,12 @@ import {
 } from "./point";
 import { loopifyInPairs } from "./list";
 
+const pointDistance = 15;
+
 class Wren {
   points: Point[];
   midpoints: Point[];
-  subPoints: Point[] = [];
+  subPoints: Point[][] = [];
 
   constructor(points) {
     this.points = points;
@@ -18,17 +20,19 @@ class Wren {
       midpoint(start, end)
     );
 
-    const calculatedPoints: Point[] = [];
-    loopifyInPairs(points).map(([start, end]) => {
+    loopifyInPairs(points).map(([start, end], index) => {
+      const points: Point[] = [];
       const halfLength = distance(start, end) / 2;
-      for (let i = 30; i < halfLength; i += 30) {
-        calculatedPoints.push(pointOnLine(i)(start, end));
+      for (let i = pointDistance; i < halfLength; i += pointDistance * 2) {
+        points.push(pointOnLine(i)(start, end));
       }
-      for (let i = 30; i < halfLength; i += 30) {
-        calculatedPoints.push(pointOnLine(i)(end, start));
+      const lastPoints: Point[] = [];
+      for (let i = pointDistance; i < halfLength; i += pointDistance * 2) {
+        lastPoints.push(pointOnLine(i)(end, start));
       }
+      points.push(...lastPoints.reverse());
+      this.subPoints[index] = points;
     });
-    this.subPoints = calculatedPoints;
   }
 }
 
