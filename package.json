@@ -45,6 +45,7 @@
     "three": "^0.88.0"
   },
   "jest": {
+    "setupFiles": ["<rootDir>/jest_shim.js"],
     "setupTestFrameworkScriptFile": "<rootDir>/enzyme_setup.js",
     "transform": {
       "^.+\\.tsx?$": "<rootDir>/node_modules/ts-jest/preprocessor.js"
