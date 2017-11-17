@@ -59,7 +59,7 @@ class Scene extends React.Component<IProps, IState> {
   constructor(props) {
     super(props);
     const { width, height, colors } = props;
-    // this.debugPlane.visible = false;
+    this.debugPlane.visible = false;
     this.debugPlane.add(this.debugArrows.arrows);
 
     this.camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
@@ -101,7 +101,7 @@ class Scene extends React.Component<IProps, IState> {
   componentDidMount() {
     (this.refs.container as HTMLElement).appendChild(this.renderer.domElement);
 
-    this.scene.add(new Axes(10));
+    // this.scene.add(new Axes(10));
 
     const model = new Model(
       [[0, 0], [2, 0], [2, 2], [1, 3], [0, 2]],
