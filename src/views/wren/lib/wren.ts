@@ -3,22 +3,26 @@ import {
   midpoint,
   distance,
   pointOnLine,
-  percentageOnLine
+  percentageOnLine,
+  angle
 } from "./point";
 import { loopifyInPairs } from "./list";
 
 const pointDistance = 15;
 
+interface Line {
+  subPoints: Point[];
+  angle: number;
+  midpoint: Point;
+}
+
 class Wren {
   points: Point[];
   midpoints: Point[];
-  subPoints: Point[][] = [];
+  lines: Line[] = [];
 
   constructor(points) {
     this.points = points;
-    this.midpoints = loopifyInPairs(points).map(([start, end]) =>
-      midpoint(start, end)
-    );
 
     loopifyInPairs(points).map(([start, end], index) => {
       const points: Point[] = [];
@@ -31,7 +35,11 @@ class Wren {
         lastPoints.push(pointOnLine(i)(end, start));
       }
       points.push(...lastPoints.reverse());
-      this.subPoints[index] = points;
+      this.lines.push({
+        subPoints: points,
+        angle: angle(start, end),
+        midpoint: midpoint(start, end)
+      });
     });
   }
 }

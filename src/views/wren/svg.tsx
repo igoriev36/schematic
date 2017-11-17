@@ -12,11 +12,13 @@ class SVG extends React.Component<IProps> {
 
   render() {
     const wren = new Wren(this.props.points);
+    console.log(wren);
     return (
       <svg>
         {wren.points.map(this.circle(3))}
         {/* {wren.midpoints.map(this.circle(4))} */}
-        {wren.subPoints.map(line => line.map(this.circle(1)))}
+        {wren.lines.map(line => line.subPoints.map(this.circle(1)))}
+        {wren.lines.map((line, index) => this.circle(5)(line.midpoint, index))}
       </svg>
     );
   }

@@ -42,3 +42,8 @@ export const percentageOnLine = (percentage = 0.5) => (
  * @returns {Array}
  */
 export const midpoint = percentageOnLine(0.5);
+
+export const angle = (start?: Point, end?: Point): number => {
+  const [x, y] = _getXY(start, end);
+  return Math.atan2(y, x);
+};
