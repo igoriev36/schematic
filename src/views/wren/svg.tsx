@@ -26,6 +26,7 @@ class SVG extends React.Component<IProps> {
         {wren.lines.map(line =>
           line.blocks.map(block => (
             <polygon
+              className={block.type}
               key={block.points.toString()}
               points={block.points.join(",")}
             />

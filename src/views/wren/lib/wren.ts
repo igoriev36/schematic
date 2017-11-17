@@ -66,6 +66,8 @@ class Wren {
       for (i = 0; i < subPoints.length - 1; i++) {
         blocks.push(
           new Block(
+            lineAngle,
+            subPoints[i],
             outerSubPoints[i],
             outerSubPoints[i + 1],
             innerSubPoints[i + 1],
