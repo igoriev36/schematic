@@ -14,7 +14,7 @@ export const pointOnLine = (distance: number) => (
 ): Point => {
   const [x, y] = _getXY(start, end);
   const hypot = Math.hypot(x, y);
-  return [x / hypot * distance, y / hypot * distance];
+  return [start[0] + x / hypot * distance, start[1] + y / hypot * distance];
 };
 
 /**
@@ -29,7 +29,7 @@ export const distance = (start?: Point, end?: Point): number => {
  * Calculates the point at a % distance between two points
  * @returns {Array}
  */
-const percentageOnLine = (percentage = 0.5) => (
+export const percentageOnLine = (percentage = 0.5) => (
   start?: Point,
   end?: Point
 ): Point => {
