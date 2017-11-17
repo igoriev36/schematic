@@ -1,12 +1,13 @@
 import {
   Point,
-  midpoint,
   distance,
   pointOnLine,
   percentageOnLine,
   angle,
   rotateAroundPoint
 } from "./point";
+
+import Block from "./block";
 
 import { loopifyInPairs } from "./list";
 import { offset } from "./clipper";
@@ -16,10 +17,11 @@ const finWidth = 12.5;
 
 interface Line {
   subPoints: Point[];
-  offsetPoints: Point[];
+  outerSubPoints: Point[];
+  innerSubPoints: Point[];
   angle: number;
   length: number;
-  midpoint?: Point;
+  blocks?: Block[];
 }
 
 class Wren {
@@ -41,24 +43,44 @@ class Wren {
       const subPoints: Point[] = [];
       const length = distance(start, end);
       const halfLength = length / 2;
+      let i = 0;
 
-      for (let i = pointDistance; i < halfLength; i += pointDistance * 2) {
+      for (i = pointDistance; i < halfLength; i += pointDistance * 2) {
         subPoints.push(pointOnLine(i)(start, end));
       }
       const lastPoints: Point[] = [];
-      for (let i = pointDistance; i < halfLength; i += pointDistance * 2) {
+      for (i = pointDistance; i < halfLength; i += pointDistance * 2) {
         lastPoints.push(pointOnLine(i)(end, start));
       }
       subPoints.push(...lastPoints.reverse());
 
+      let outerSubPoints = [];
+      let innerSubPoints = [];
+      subPoints.forEach(point => {
+        const rotate = rotateAroundPoint(point, lineAngle);
+        outerSubPoints.push(rotate([point[0], point[1] + finWidth]));
+        innerSubPoints.push(rotate([point[0], point[1] - finWidth]));
+      });
+
+      let blocks = [];
+      for (i = 0; i < subPoints.length - 1; i++) {
+        blocks.push(
+          new Block(
+            outerSubPoints[i],
+            outerSubPoints[i + 1],
+            innerSubPoints[i + 1],
+            innerSubPoints[i]
+          )
+        );
+      }
+
       return {
         angle: lineAngle,
-        subPoints,
-        offsetPoints: subPoints.map(point =>
-          rotateAroundPoint(point, lineAngle)([point[0], point[1] + finWidth])
-        ),
         length,
-        midPoint: [1, 1]
+        subPoints,
+        outerSubPoints,
+        innerSubPoints,
+        blocks
       };
     });
   };
