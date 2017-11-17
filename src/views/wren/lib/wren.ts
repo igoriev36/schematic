@@ -4,7 +4,8 @@ import {
   distance,
   pointOnLine,
   percentageOnLine,
-  angle
+  angle,
+  rotateAroundPoint
 } from "./point";
 import { loopifyInPairs } from "./list";
 
@@ -12,36 +13,49 @@ const pointDistance = 15;
 
 interface Line {
   subPoints: Point[];
+  offsetPoints: Point[];
   angle: number;
-  midpoint: Point;
+  length: number;
+  midpoint?: Point;
 }
 
 class Wren {
   points: Point[];
   midpoints: Point[];
-  lines: Line[] = [];
+  lines: Line[];
 
   constructor(points) {
     this.points = points;
+    this.lines = this.calculateLines(points);
+  }
 
-    loopifyInPairs(points).map(([start, end], index) => {
-      const points: Point[] = [];
-      const halfLength = distance(start, end) / 2;
+  private calculateLines = (_points): Line[] => {
+    return loopifyInPairs(_points).map(([start, end], index) => {
+      const lineAngle = angle(start, end);
+      const subPoints: Point[] = [];
+      const length = distance(start, end);
+      const halfLength = length / 2;
+
       for (let i = pointDistance; i < halfLength; i += pointDistance * 2) {
-        points.push(pointOnLine(i)(start, end));
+        subPoints.push(pointOnLine(i)(start, end));
       }
       const lastPoints: Point[] = [];
       for (let i = pointDistance; i < halfLength; i += pointDistance * 2) {
         lastPoints.push(pointOnLine(i)(end, start));
       }
-      points.push(...lastPoints.reverse());
-      this.lines.push({
-        subPoints: points,
-        angle: angle(start, end),
-        midpoint: midpoint(start, end)
-      });
+      subPoints.push(...lastPoints.reverse());
+
+      return {
+        angle: lineAngle,
+        subPoints,
+        offsetPoints: subPoints.map(point =>
+          rotateAroundPoint(point, lineAngle)([point[0], point[1] + 20])
+        ),
+        length,
+        midPoint: [1, 1]
+      };
     });
-  }
+  };
 }
 
 export default Wren;

@@ -47,3 +47,17 @@ export const angle = (start?: Point, end?: Point): number => {
   const [x, y] = _getXY(start, end);
   return Math.atan2(y, x);
 };
+
+/**
+ * Rotates a point rotated around a given axis point (in radians)
+ */
+export const rotateAroundPoint = ([originX, originY]: Point, angle = 0) => (
+  [pointX, pointY]: Point
+): Point => {
+  const cosAngle = Math.cos(angle);
+  const sinAngle = Math.sin(angle);
+  return [
+    cosAngle * (pointX - originX) - sinAngle * (pointY - originY) + originX,
+    sinAngle * (pointX - originX) + cosAngle * (pointY - originY) + originY
+  ];
+};
