@@ -23,8 +23,8 @@ const standardBlock = [
 ]
 
 class Block {
-  outerPoints: Point[];
-  innerPoints: Point[];
+  outerPoints: Point[] = [];
+  innerPoints: Point[] = [];
 
   type: string;
   types = {
@@ -51,8 +51,8 @@ class Block {
         .map(rotateAroundPoint(bl, angle));
     } else {
       this.type = this.types.FILLER;
-      this.innerPoints = [tl, tr];
-      this.outerPoints = [br, bl];
+      // this.innerPoints = [tl, tr];
+      // this.outerPoints = [br, bl];
     }
     // this.points = [tl, tr, br, bl];
   }

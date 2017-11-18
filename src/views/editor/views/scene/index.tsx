@@ -52,6 +52,7 @@ class Scene extends React.Component<IProps, IState> {
   private debugArrows = DebugArrows();
   private line: THREE.Line3 = new THREE.Line3();
   private lineHelper: THREE.Line = new THREE.Line();
+  private controls;
 
   Tools = {
     EXTRUDE: "Extrude"
@@ -88,7 +89,7 @@ class Scene extends React.Component<IProps, IState> {
     this.lineHelper = new THREE.Line(lineGeometry, lineMaterial);
     this.scene.add(this.lineHelper);
 
-    const sceneControls = SceneControls(this.camera, this.renderer.domElement);
+    this.controls = SceneControls(this.camera, this.renderer.domElement);
 
     this.vertices$
       .map(([vector, cloned, toAdd]) => vector.copy(cloned.add(toAdd)))
@@ -171,6 +172,28 @@ class Scene extends React.Component<IProps, IState> {
     requestAnimationFrame(this.render3);
   }
 
+  handleMouseWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    // TODO: fix bug where target is broken after zoom
+    const factor = -event.deltaY / 50;
+    const [x, y] = getPosition(
+      event.clientX,
+      event.clientY,
+      this.props.width,
+      this.props.height
+    );
+    var vector = new THREE.Vector3(x, y, 1);
+    vector.unproject(this.camera);
+    vector.sub(this.camera.position);
+    this.camera.position.addVectors(
+      this.camera.position,
+      vector.setLength(factor)
+    );
+    this.controls.target.addVectors(
+      this.controls.target,
+      vector.setLength(factor)
+    );
+  };
+
   handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     const [x, y] = getPosition(
       event.clientX,
@@ -179,6 +202,7 @@ class Scene extends React.Component<IProps, IState> {
       this.props.height
     );
     this.raycaster.setFromCamera({ x, y }, this.camera);
+
     const intersects = this.raycaster.intersectObject(
       this.activeModel.mesh,
       false
@@ -331,6 +355,7 @@ class Scene extends React.Component<IProps, IState> {
         onMouseUp={this.handleMouseUp}
         onMouseDown={this.handleMouseDown}
         onMouseMove={this.handleMouseMove}
+        onWheel={this.handleMouseWheel}
       >
         <Measurement title="width" value={100} x={20} y={30} />
         <Measurement title="height" value={220} x={20} y={60} />
