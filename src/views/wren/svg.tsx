@@ -1,27 +1,56 @@
 import * as React from "react";
 import Wren from "./lib/wren";
+import DragPoint from "./lib/drag_point";
+import { Point } from "./lib/point";
 
-export interface IProps {
-  points: [number, number][];
+export interface IProps extends React.Props<{}> {
+  action: [string, any[]];
+  actions: any;
+  handleMouseUp: any;
+  points: Point[];
+  setActivePoint: any;
+  setPointPosition: any;
 }
 
 class SVG extends React.Component<IProps> {
-  circle = radius => ([x, y], index) => (
-    <circle key={index} cx={x} cy={y} r={radius} />
-  );
+  svgPoint = (x, y) => {
+    let point = (this.refs.svg as SVGSVGElement).createSVGPoint();
+    point.x = x;
+    point.y = y;
+    point = point.matrixTransform(
+      (this.refs.svg as SVGSVGElement).getCTM().inverse()
+    );
+    return [Math.round(point.x), Math.round(point.y)];
+  };
+
+  handleMouseMove = (event: React.MouseEvent<SVGSVGElement>) => {
+    const [x, y] = this.svgPoint(event.pageX, event.pageY);
+    const pos = { x, y };
+    switch (this.props.action[0]) {
+      case this.props.actions.DRAGGING_POINTS:
+        this.props.action[1].forEach(index => {
+          this.props.setPointPosition(index)(x, y);
+        });
+        break;
+    }
+  };
 
   render() {
+    const { points, handleMouseUp, setActivePoint } = this.props;
     console.time("wren");
-    const wren = new Wren(this.props.points);
+    const wren = new Wren(points);
     console.timeEnd("wren");
-    console.log(wren);
+    // console.log(wren);
     return (
-      <svg>
-        {/* {wren.outerPoints.map(this.circle(2))} */}
-        {/* {wren.points.map(this.circle(3))} */}
-        {/* {wren.innerPoints.map(this.circle(2))} */}
-        {/* {wren.lines.map(line => line.subPoints.map(this.circle(1)))} */}
-        {/* {wren.lines.map(line => line.outerSubPoints.map(this.circle(1)))} */}
+      <svg
+        ref="svg"
+        onMouseMove={this.handleMouseMove}
+        onMouseUp={handleMouseUp}
+      >
+        {/* {wren.outerPoints.map(Circle(2))} */}
+        {/* {wren.innerPoints.map(Circle(2))} */}
+        {/* {wren.lines.map(line => line.subPoints.map(Circle(1)))} */}
+        {/* {wren.lines.map(line => line.outerSubPoints.map(Circle(1)))} */}
         {/* {wren.lines.map((line, index) =>
           line.blocks.map(block => (
             <polygon
@@ -45,6 +74,16 @@ class SVG extends React.Component<IProps> {
             className="reinforcer"
             key={reinforcer.toString()}
             points={reinforcer.join(",")}
+          />
+        ))}
+
+        {wren.points.map(([x, y], i) => (
+          <DragPoint
+            x={x}
+            y={y}
+            i={i}
+            setActivePoint={setActivePoint}
+            auto={false}
           />
         ))}
       </svg>
