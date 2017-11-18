@@ -4,7 +4,7 @@ function Layers({ toggleLayer, layers }) {
   return (
     <div id="layers">
       {["reinforcers", "finPieces"].map(layerName => (
-        <label>
+        <label key={layerName}>
           {layerName}
           <input
             type="checkbox"

@@ -87,6 +87,7 @@ class SVG extends React.Component<IProps> {
             x={x}
             y={y}
             i={i}
+            key={i}
             setActivePoint={setActivePoint}
             auto={false}
           />
