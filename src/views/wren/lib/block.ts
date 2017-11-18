@@ -50,6 +50,10 @@ class Block {
     }
     // this.points = [tl, tr, br, bl];
   }
+
+  get outerPoints(): Point[] {
+    return this.points;
+  }
 }
 
 export default Block;

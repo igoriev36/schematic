@@ -9,9 +9,11 @@ import {
 
 import Block from "./block";
 import Corner from "./corner";
+import { flatMap } from "lodash";
 
 import { loopifyInPairs, loopifyInGroups, safeIndex } from "./list";
 import { offset } from "./clipper";
+import { take } from "rxjs/operator/take";
 
 const pointDistance = 15;
 const finWidth = 12.5;
@@ -31,6 +33,7 @@ class Wren {
   outerPoints: Point[];
   points: Point[];
   lines: Line[];
+  reinforcers: Point[][] = [];
 
   constructor(points) {
     // offset with 0 to normalize direction of points (clockwise or counter-clockwise)
@@ -39,6 +42,8 @@ class Wren {
     this.innerPoints = offset(points, { DELTA: -finWidth });
     this.lines = this.calculateLines(this.points);
     this.calculateCorners();
+
+    this.calculateReinforcers();
   }
 
   private calculateLines = (_points): Line[] => {
@@ -120,6 +125,25 @@ class Wren {
         prevLine.innerSubPoints[prevLine.outerSubPoints.length - 1]
       );
       prevLine.corner = corner;
+    }
+  };
+
+  private calculateReinforcers = () => {
+    const index = safeIndex(this.lines.length);
+    for (let i = 0; i < this.lines.length; i++) {
+      const nextI = index(i + 1);
+      const prevLine = this.lines[i];
+      const nextLine = this.lines[nextI];
+      this.reinforcers.push(
+        flatMap(
+          [
+            ...prevLine.blocks.slice(-2),
+            prevLine.corner,
+            ...nextLine.blocks.slice(0, 2)
+          ],
+          geometry => geometry.outerPoints
+        )
+      );
     }
   };
 }

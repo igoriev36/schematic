@@ -17,9 +17,9 @@ class SVG extends React.Component<IProps> {
     console.log(wren);
     return (
       <svg>
-        {wren.outerPoints.map(this.circle(2))}
+        {/* {wren.outerPoints.map(this.circle(2))} */}
         {/* {wren.points.map(this.circle(3))} */}
-        {wren.innerPoints.map(this.circle(2))}
+        {/* {wren.innerPoints.map(this.circle(2))} */}
 
         {/* {wren.lines.map(line => line.subPoints.map(this.circle(1)))} */}
         {wren.lines.map(line => line.outerSubPoints.map(this.circle(1)))}
@@ -37,6 +37,14 @@ class SVG extends React.Component<IProps> {
           <polygon
             key={line.corner.points.toString()}
             points={line.corner.points.join(",")}
+          />
+        ))}
+
+        {wren.reinforcers.map((reinforcer, index) => (
+          <polygon
+            className="reinforcer"
+            key={reinforcer.toString()}
+            points={reinforcer.join(",")}
           />
         ))}
       </svg>
