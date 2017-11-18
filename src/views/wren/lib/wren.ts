@@ -150,7 +150,17 @@ class Wren {
     }
   };
 
-  private calculateFinPieces = () => {};
+  private calculateFinPieces = () => {
+    const index = safeIndex(this.lines.length);
+    for (let i = 0; i < this.lines.length; i++) {
+      const blocks = this.lines[i].blocks;
+      this.finPieces.push(
+        flatMap(blocks, geometry => geometry.outerPoints).concat(
+          flatMap(blocks.reverse(), geometry => geometry.innerPoints)
+        )
+      );
+    }
+  };
 }
 
 export default Wren;

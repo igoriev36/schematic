@@ -51,8 +51,8 @@ class Block {
         .map(rotateAroundPoint(bl, angle));
     } else {
       this.type = this.types.FILLER;
-      this.outerPoints = [tl, tr];
-      this.innerPoints = [br, bl];
+      this.innerPoints = [tl, tr];
+      this.outerPoints = [br, bl];
     }
     // this.points = [tl, tr, br, bl];
   }
