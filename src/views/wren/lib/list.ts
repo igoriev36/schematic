@@ -45,4 +45,18 @@ export const loopifyInGroups = (size: number, offset: number = 0) => <T>(
   return loopedArray;
 };
 
+/**
+ * Returns an valid index even when its input value is out of bounds
+ * @returns {Number}
+ */
+export const safeIndex = arrayLength => index => {
+  if (index < 0) {
+    return (arrayLength + index % arrayLength) % arrayLength;
+  } else if (index >= arrayLength) {
+    return index % arrayLength;
+  } else {
+    return index;
+  }
+};
+
 export const loopifyInPairs = loopifyInGroups(2);

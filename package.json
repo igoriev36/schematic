@@ -30,7 +30,7 @@
     "enzyme-adapter-react-16": "^1.1.0",
     "ghpages": "^0.0.10",
     "jest": "^21.2.1",
-    "ts-jest": "^21.2.2",
+    "ts-jest": "^21.2.3",
     "ts-loader": "^3.1.1",
     "typescript": "^2.6.1",
     "webpack": "^3.8.1",
