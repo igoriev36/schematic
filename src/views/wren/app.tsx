@@ -2,6 +2,7 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import SVG, { IProps as ISVGProps } from "./svg";
 import { Point } from "./lib/point";
+import Layers from "./layers";
 
 // prettier-ignore
 const points: ISVGProps["points"] = [
@@ -15,6 +16,7 @@ const points: ISVGProps["points"] = [
 interface IState {
   action: [string, any[]];
   points: Point[];
+  layers: Set<string>;
 }
 
 class App extends React.Component<{}, IState> {
@@ -28,7 +30,8 @@ class App extends React.Component<{}, IState> {
 
   state: IState = {
     action: [this.actions.NOTHING, undefined],
-    points: []
+    points: [],
+    layers: new Set(["reinforcers", "finPieces"])
   };
 
   componentDidMount() {
@@ -57,16 +60,29 @@ class App extends React.Component<{}, IState> {
     });
   };
 
+  toggleLayer = layerName => event => {
+    this.setState(prevState => {
+      prevState.layers.has(layerName)
+        ? prevState.layers.delete(layerName)
+        : prevState.layers.add(layerName);
+      return prevState;
+    });
+  };
+
   render() {
     return (
-      <SVG
-        action={this.state.action}
-        actions={this.actions}
-        handleMouseUp={this.handleMouseUp}
-        points={this.state.points}
-        setActivePoint={this.setActivePoint}
-        setPointPosition={this.setPointPosition}
-      />
+      <div>
+        <SVG
+          action={this.state.action}
+          actions={this.actions}
+          handleMouseUp={this.handleMouseUp}
+          layers={this.state.layers}
+          points={this.state.points}
+          setActivePoint={this.setActivePoint}
+          setPointPosition={this.setPointPosition}
+        />
+        <Layers layers={this.state.layers} toggleLayer={this.toggleLayer} />
+      </div>
     );
   }
 }

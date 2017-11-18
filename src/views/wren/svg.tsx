@@ -7,6 +7,7 @@ export interface IProps extends React.Props<{}> {
   action: [string, any[]];
   actions: any;
   handleMouseUp: any;
+  layers: Set<string>;
   points: Point[];
   setActivePoint: any;
   setPointPosition: any;
@@ -36,7 +37,7 @@ class SVG extends React.Component<IProps> {
   };
 
   render() {
-    const { points, handleMouseUp, setActivePoint } = this.props;
+    const { points, handleMouseUp, setActivePoint, layers } = this.props;
     console.time("wren");
     const wren = new Wren(points);
     console.timeEnd("wren");
@@ -61,21 +62,25 @@ class SVG extends React.Component<IProps> {
           ))
         )} */}
 
-        {wren.finPieces.map((finPiece, index) => (
-          <polygon
-            className="finPiece"
-            key={finPiece.toString()}
-            points={finPiece.join(",")}
-          />
-        ))}
+        {layers.has("finPieces")
+          ? wren.finPieces.map((finPiece, index) => (
+              <polygon
+                className="finPiece"
+                key={finPiece.toString()}
+                points={finPiece.join(",")}
+              />
+            ))
+          : ""}
 
-        {wren.reinforcers.map((reinforcer, index) => (
-          <polygon
-            className="reinforcer"
-            key={reinforcer.toString()}
-            points={reinforcer.join(",")}
-          />
-        ))}
+        {layers.has("reinforcers")
+          ? wren.reinforcers.map((reinforcer, index) => (
+              <polygon
+                className="reinforcer"
+                key={reinforcer.toString()}
+                points={reinforcer.join(",")}
+              />
+            ))
+          : ""}
 
         {wren.points.map(([x, y], i) => (
           <DragPoint

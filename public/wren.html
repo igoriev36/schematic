@@ -11,6 +11,7 @@
         box-sizing: border-box;
         margin: 0;
         padding: 0;
+        font-family: Menlo;
       }
       svg {
         border: 1px solid black;
@@ -51,6 +52,27 @@
       }
       g.line-6 polygon {
         stroke: violet;
+      }
+      #layers {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        background: #CCC;
+      }
+      .point {
+        cursor: -webkit-grab;
+      }
+      .point:active {
+        cursor: -webkit-grabbing;
+      }
+      label {
+        display: block;
+        font-size: 12px;
+        text-align: right;
+        padding: 4px;
+        cursor: pointer;
+        -webkit-user-select: none;
+        user-select: none;
       }
     </style>
   </head>
