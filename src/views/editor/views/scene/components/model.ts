@@ -9,14 +9,14 @@ class Model {
   edgesGeometry: THREE.EdgesGeometry;
   private lineSegments: THREE.LineSegments;
 
-  constructor(edges: number[][], faceColor, faceHighlightColor) {
+  constructor(edges: number[][], faceColor, faceHighlightColor, amount = 5) {
     const shape = new THREE.Shape();
     edges.forEach(([x, y], index) => {
       if (index == 0) shape.moveTo(x, y);
       else shape.lineTo(x, y);
     });
     const extrudeSettings = {
-      amount: 5,
+      amount,
       bevelEnabled: false,
       steps: 1
     };

@@ -1,7 +1,7 @@
 import * as React from "react";
 import Wren from "./lib/wren";
 import DragPoint from "./lib/drag_point";
-import { Point } from "./lib/point";
+import { Point, bounds } from "./lib/point";
 
 export interface IProps extends React.Props<{}> {
   action: [string, any[]];
@@ -38,9 +38,10 @@ class SVG extends React.Component<IProps> {
 
   render() {
     const { points, handleMouseUp, setActivePoint, layers } = this.props;
-    console.time("wren");
+    // console.time("wren");
     const wren = new Wren(points);
-    console.timeEnd("wren");
+    console.log(bounds(points));
+    // console.timeEnd("wren");
     // console.log(wren);
     return (
       <svg

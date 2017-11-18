@@ -61,3 +61,26 @@ export const rotateAroundPoint = ([originX, originY]: Point, angle = 0) => (
     sinAngle * (pointX - originX) + cosAngle * (pointY - originY) + originY
   ];
 };
+
+export function bounds(points) {
+  const b = points.reduce(
+    (o, v) => {
+      if (v[0] < o.minX) o.minX = v[0];
+      if (v[0] > o.maxX) o.maxX = v[0];
+      if (v[1] < o.minY) o.minY = v[1];
+      if (v[1] > o.maxY) o.maxY = v[1];
+      return o;
+    },
+    {
+      minX: Infinity,
+      maxX: -Infinity,
+      minY: Infinity,
+      maxY: -Infinity
+    }
+  );
+
+  b.offsetX = b.minX + (b.maxX - b.minX) / 2;
+  b.offsetY = b.minY + (b.maxY - b.minY) / 2;
+
+  return b;
+}
