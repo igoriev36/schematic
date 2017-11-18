@@ -1,14 +1,16 @@
 import { Point } from "./point";
 
 class Corner {
-  points: Point[];
+  outerPoints: Point[];
+  innerPoints: Point[];
 
   constructor(tl: Point, t: Point, tr: Point, br: Point, b: Point, bl: Point) {
-    this.points = [tl, t, tr, br, b, bl];
+    this.outerPoints = [tl, t, tr];
+    this.innerPoints = [br, b, bl];
   }
 
-  get outerPoints(): Point[] {
-    return this.points;
+  get points(): Point[] {
+    return [...this.outerPoints, ...this.innerPoints];
   }
 }
 

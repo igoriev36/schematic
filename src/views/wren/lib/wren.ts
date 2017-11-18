@@ -134,14 +134,15 @@ class Wren {
       const nextI = index(i + 1);
       const prevLine = this.lines[i];
       const nextLine = this.lines[nextI];
+      const blocks = [
+        ...prevLine.blocks.slice(-2),
+        prevLine.corner,
+        ...nextLine.blocks.slice(0, 2)
+      ];
+
       this.reinforcers.push(
-        flatMap(
-          [
-            ...prevLine.blocks.slice(-2),
-            prevLine.corner,
-            ...nextLine.blocks.slice(0, 2)
-          ],
-          geometry => geometry.outerPoints
+        flatMap(blocks, geometry => geometry.outerPoints).concat(
+          flatMap(blocks.reverse(), geometry => geometry.innerPoints)
         )
       );
     }
