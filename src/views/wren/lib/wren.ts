@@ -34,6 +34,7 @@ class Wren {
   points: Point[];
   lines: Line[];
   reinforcers: Point[][] = [];
+  finPieces: Point[][] = [];
 
   constructor(points) {
     // offset with 0 to normalize direction of points (clockwise or counter-clockwise)
@@ -44,6 +45,7 @@ class Wren {
     this.calculateCorners();
 
     this.calculateReinforcers();
+    this.calculateFinPieces();
   }
 
   private calculateLines = (_points): Line[] => {
@@ -147,6 +149,8 @@ class Wren {
       );
     }
   };
+
+  private calculateFinPieces = () => {};
 }
 
 export default Wren;

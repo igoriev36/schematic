@@ -23,7 +23,7 @@ class SVG extends React.Component<IProps> {
 
         {/* {wren.lines.map(line => line.subPoints.map(this.circle(1)))} */}
         {/* {wren.lines.map(line => line.outerSubPoints.map(this.circle(1)))} */}
-        {/* {wren.lines.map((line, index) =>
+        {wren.lines.map((line, index) =>
           line.blocks.map(block => (
             <polygon
               className={block.type}
@@ -31,7 +31,7 @@ class SVG extends React.Component<IProps> {
               points={block.points.join(",")}
             />
           ))
-        )} */}
+        )}
 
         {/* {wren.lines.map((line, index) => (
           <polygon
