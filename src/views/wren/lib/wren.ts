@@ -4,7 +4,8 @@ import {
   pointOnLine,
   percentageOnLine,
   angle,
-  rotateAroundPoint
+  rotateAroundPoint,
+  bounds
 } from "./point";
 
 import Block from "./block";
@@ -32,6 +33,7 @@ class Wren {
   innerPoints: Point[];
   outerPoints: Point[];
   points: Point[];
+  normalizedPoints: Point[];
   lines: Line[];
   reinforcers: Point[][] = [];
   finPieces: Point[][] = [];
@@ -39,6 +41,11 @@ class Wren {
   constructor(points) {
     // offset with 0 to normalize direction of points (clockwise or counter-clockwise)
     this.points = offset(points, { DELTA: 0 });
+    const pointBounds = bounds(points);
+    this.normalizedPoints = this.points.map(([x, y]): Point => [
+      x - pointBounds.minX,
+      pointBounds.maxY - y
+    ]);
     this.outerPoints = offset(points, { DELTA: finWidth });
     this.innerPoints = offset(points, { DELTA: -finWidth });
     this.lines = this.calculateLines(this.points);

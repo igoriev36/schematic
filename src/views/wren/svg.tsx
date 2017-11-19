@@ -40,7 +40,7 @@ class SVG extends React.Component<IProps> {
     const { points, handleMouseUp, setActivePoint, layers } = this.props;
     // console.time("wren");
     const wren = new Wren(points);
-    console.log(bounds(points));
+    // console.log(bounds(points));
     // console.timeEnd("wren");
     // console.log(wren);
     return (
@@ -87,6 +87,8 @@ class SVG extends React.Component<IProps> {
           <DragPoint
             x={x}
             y={y}
+            nX={wren.normalizedPoints[i][0]}
+            nY={wren.normalizedPoints[i][1]}
             i={i}
             key={i}
             setActivePoint={setActivePoint}

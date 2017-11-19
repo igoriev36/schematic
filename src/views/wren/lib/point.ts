@@ -62,7 +62,16 @@ export const rotateAroundPoint = ([originX, originY]: Point, angle = 0) => (
   ];
 };
 
-export function bounds(points) {
+export function bounds(
+  points
+): {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+  offsetX: number;
+  offsetY: number;
+} {
   const b = points.reduce(
     (o, v) => {
       if (v[0] < o.minX) o.minX = v[0];
