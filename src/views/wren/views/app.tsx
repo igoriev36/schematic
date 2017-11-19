@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import SVG, { IProps as ISVGProps } from "./svg";
-import { Point } from "./lib/point";
+import { Point } from "../lib/utils/point";
 import Layers from "./layers";
 
 // prettier-ignore
@@ -31,7 +31,7 @@ class App extends React.Component<{}, IState> {
   state: IState = {
     action: [this.actions.NOTHING, undefined],
     points: [],
-    layers: new Set(["reinforcers", "finPieces"])
+    layers: new Set(["reinforcers", "finPieces", "outerWalls", "innerWalls"])
   };
 
   componentDidMount() {

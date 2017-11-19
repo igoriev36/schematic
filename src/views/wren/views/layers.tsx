@@ -3,7 +3,12 @@ import * as React from "react";
 function Layers({ toggleLayer, layers }) {
   return (
     <div id="layers">
-      {["reinforcers", "finPieces"].map(layerName => (
+      {[
+        "reinforcers",
+        "finPieces",
+        "outerWalls",
+        "innerWalls"
+      ].map(layerName => (
         <label key={layerName}>
           {layerName}
           <input

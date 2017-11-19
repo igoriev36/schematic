@@ -1,4 +1,4 @@
-import { Point, distance, rotateAroundPoint } from "./point";
+import { Point, distance, rotateAroundPoint } from "../utils/point";
 
 const blockWidth = 30;
 const blockHeight = 25;

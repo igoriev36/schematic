@@ -1,7 +1,7 @@
 import * as React from "react";
-import Wren from "./lib/wren";
-import DragPoint from "./lib/drag_point";
-import { Point, bounds } from "./lib/point";
+import Wren from "../lib/wren";
+import DragPoint from "../lib/drag_point";
+import { Point, bounds } from "../lib/utils/point";
 
 export interface IProps extends React.Props<{}> {
   action: [string, any[]];
@@ -40,7 +40,6 @@ class SVG extends React.Component<IProps> {
     const { points, handleMouseUp, setActivePoint, layers } = this.props;
     // console.time("wren");
     const wren = new Wren(points);
-    // console.log(bounds(points));
     // console.timeEnd("wren");
     // console.log(wren);
     return (
@@ -79,6 +78,26 @@ class SVG extends React.Component<IProps> {
                 className="reinforcer"
                 key={reinforcer.toString()}
                 points={reinforcer.join(",")}
+              />
+            ))
+          : ""}
+
+        {layers.has("outerWalls")
+          ? wren.outerWalls.map((wall, index) => (
+              <polygon
+                className="wall"
+                key={wall.points.toString()}
+                points={wall.points.join(",")}
+              />
+            ))
+          : ""}
+
+        {layers.has("innerWalls")
+          ? wren.innerWalls.map((wall, index) => (
+              <polygon
+                className="wall"
+                key={wall.points.toString()}
+                points={wall.points.join(",")}
               />
             ))
           : ""}

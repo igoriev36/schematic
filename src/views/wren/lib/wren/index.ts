@@ -6,14 +6,15 @@ import {
   angle,
   rotateAroundPoint,
   bounds
-} from "./point";
+} from "../utils/point";
 
 import Block from "./block";
 import Corner from "./corner";
+import Wall from "./wall";
 import { flatMap } from "lodash";
 
-import { loopifyInPairs, loopifyInGroups, safeIndex } from "./list";
-import { offset } from "./clipper";
+import { loopifyInPairs, loopifyInGroups, safeIndex } from "../utils/list";
+import { offset } from "../clipper";
 import { take } from "rxjs/operator/take";
 
 const pointDistance = 15;
@@ -37,6 +38,8 @@ class Wren {
   lines: Line[];
   reinforcers: Point[][] = [];
   finPieces: Point[][] = [];
+  outerWalls: Wall[] = [];
+  innerWalls: Wall[] = [];
 
   constructor(points) {
     // offset with 0 to normalize direction of points (clockwise or counter-clockwise)
@@ -53,6 +56,8 @@ class Wren {
 
     this.calculateReinforcers();
     this.calculateFinPieces();
+    this.calculateWalls("innerWalls", this.innerPoints, -120);
+    this.calculateWalls("outerWalls", this.outerPoints, 120);
   }
 
   private calculateLines = (_points): Line[] => {
@@ -165,6 +170,18 @@ class Wren {
         flatMap(blocks, geometry => geometry.outerPoints).concat(
           flatMap(blocks.reverse(), geometry => geometry.innerPoints)
         )
+      );
+    }
+  };
+
+  private calculateWalls = (name, points, distance) => {
+    const index = safeIndex(points.length);
+    for (let i = 0; i < points.length; i++) {
+      this[name].push(
+        new Wall(distance, points[i], this.lines[i].angle, [
+          points[i],
+          points[index(i + 1)]
+        ])
       );
     }
   };

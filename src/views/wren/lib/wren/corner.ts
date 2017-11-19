@@ -1,4 +1,4 @@
-import { Point } from "./point";
+import { Point } from "../utils/point";
 
 class Corner {
   outerPoints: Point[];
