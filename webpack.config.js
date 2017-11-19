@@ -34,7 +34,7 @@ module.exports = {
         use: [
           {
             loader: "babel-loader",
-            options: { presets: ["env"], plugins: ["transform-decorators-legacy"] }
+            options: { presets: ["env"] }
           }
         ]
       },

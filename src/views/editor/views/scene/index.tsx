@@ -12,6 +12,7 @@ import { lineMaterial } from "./materials";
 import Wren from "../../../wren/lib/wren";
 import SceneControls from "./components/scene_controls";
 import WrenModel from "./components/wren_model";
+import rendererStats from "./components/renderer_stats";
 
 // prettier-ignore
 const points = [
@@ -140,6 +141,8 @@ class Scene extends React.Component<IProps, IState> {
     this.camera.lookAt(new THREE.Vector3(0, 0, 0));
 
     requestAnimationFrame(this.render3);
+
+    document.body.appendChild(rendererStats.domElement);
   }
 
   handleMouseWheel = (event: React.WheelEvent<HTMLDivElement>) => {
@@ -316,6 +319,8 @@ class Scene extends React.Component<IProps, IState> {
     // console.log("render");
     this.renderer.render(this.scene, this.camera);
     requestAnimationFrame(this.render3);
+    // TODO: don't call this on every render iteration
+    rendererStats.update(this.renderer);
   };
 
   render() {
