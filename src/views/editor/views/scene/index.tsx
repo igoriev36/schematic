@@ -282,12 +282,14 @@ class Scene extends React.Component<IProps, IState> {
 
   handleMouseUp = (event: React.MouseEvent<HTMLDivElement>) => {
     this.mouseDown = false;
+    this.controls.enabled = true;
     this.activeVertices.clear();
   };
 
   handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
     this.mouseDown = true;
     if (this.activeIntersection) {
+      this.controls.enabled = false;
       this.clickPoint = this.activeIntersection.point;
 
       this.activeVertices = ((this.activeIntersection.object as THREE.Mesh)

@@ -86,8 +86,8 @@ class SVG extends React.Component<IProps> {
           ? wren.outerWalls.map((wall, index) => (
               <polygon
                 className="wall"
-                key={wall.points.toString()}
-                points={wall.points.join(",")}
+                key={wall.toString()}
+                points={wall.join(",")}
               />
             ))
           : ""}
@@ -96,8 +96,8 @@ class SVG extends React.Component<IProps> {
           ? wren.innerWalls.map((wall, index) => (
               <polygon
                 className="wall"
-                key={wall.points.toString()}
-                points={wall.points.join(",")}
+                key={wall.toString()}
+                points={wall.join(",")}
               />
             ))
           : ""}

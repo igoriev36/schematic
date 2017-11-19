@@ -38,8 +38,8 @@ class Wren {
   lines: Line[];
   reinforcers: Point[][] = [];
   finPieces: Point[][] = [];
-  outerWalls: Wall[] = [];
-  innerWalls: Wall[] = [];
+  outerWalls: Point[][] = [];
+  innerWalls: Point[][] = [];
 
   constructor(points) {
     // offset with 0 to normalize direction of points (clockwise or counter-clockwise)
@@ -181,7 +181,7 @@ class Wren {
         new Wall(distance, points[i], this.lines[i].angle, [
           points[i],
           points[index(i + 1)]
-        ])
+        ]).points
       );
     }
   };
