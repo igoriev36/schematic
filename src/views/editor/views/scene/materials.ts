@@ -20,3 +20,9 @@ export const lineMaterial = new THREE.LineBasicMaterial({
   linewidth: 4,
   overdraw: 0.5
 });
+
+export const pieceExtrudeSettings = {
+  amount: 0.018,
+  bevelEnabled: false,
+  steps: 1
+};

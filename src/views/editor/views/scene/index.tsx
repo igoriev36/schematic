@@ -11,6 +11,7 @@ import DebugArrows from "./components/debug_arrows";
 import { lineMaterial } from "./materials";
 import Wren from "../../../wren/lib/wren";
 import SceneControls from "./components/scene_controls";
+import WrenModel from "./components/wren_model";
 
 // prettier-ignore
 const points = [
@@ -126,43 +127,12 @@ class Scene extends React.Component<IProps, IState> {
     this.activeModel = model;
     this.scene.add(model.mesh);
 
-    // TODO: remove these
-
-    const model2 = new Model(
-      wren.finPieces[0].map(([x, y]) => [x / 100, y / 100]),
+    const wrenModel = new WrenModel(
+      wren,
       this.props.colors.face,
-      this.props.colors.faceHighlight,
-      0.018
+      this.props.colors.faceHighlight
     );
-    this.scene.add(model2.mesh);
-
-    const model3 = new Model(
-      wren.finPieces[1].map(([x, y]) => [x / 100, y / 100]),
-      this.props.colors.face,
-      this.props.colors.faceHighlight,
-      0.018
-    );
-    this.scene.add(model3.mesh);
-
-    const model4 = new Model(
-      wren.reinforcers[0].map(([x, y]) => [x / 100, y / 100]),
-      this.props.colors.face,
-      this.props.colors.faceHighlight,
-      0.018
-    );
-    model4.mesh.translateZ(-0.018);
-    this.scene.add(model4.mesh);
-
-    const model5 = new Model(
-      wren.reinforcers[4].map(([x, y]) => [x / 100, y / 100]),
-      this.props.colors.face,
-      this.props.colors.faceHighlight,
-      0.018
-    );
-    model5.mesh.translateZ(-0.018);
-    this.scene.add(model5.mesh);
-
-    //
+    this.scene.add(wrenModel.mesh);
 
     this.camera.position.x = 10;
     this.camera.position.y = 10;
@@ -174,6 +144,7 @@ class Scene extends React.Component<IProps, IState> {
 
   handleMouseWheel = (event: React.WheelEvent<HTMLDivElement>) => {
     // TODO: fix bug where target is broken after zoom
+    // https://stackoverflow.com/questions/23994206/zoom-to-object-in-threejs/30514984#30514984
     const factor = -event.deltaY / 50;
     const [x, y] = getPosition(
       event.clientX,
@@ -342,7 +313,7 @@ class Scene extends React.Component<IProps, IState> {
   };
 
   render3 = () => {
-    console.log("render");
+    // console.log("render");
     this.renderer.render(this.scene, this.camera);
     requestAnimationFrame(this.render3);
   };
