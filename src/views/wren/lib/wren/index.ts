@@ -46,6 +46,7 @@ class Wren {
     this.points = offset(points, { DELTA: 0 });
     const pointBounds = bounds(points);
     this.normalizedPoints = this.points.map(([x, y]): Point => [
+      // x - pointBounds.offsetX, // centered point
       x - pointBounds.minX,
       pointBounds.maxY - y
     ]);

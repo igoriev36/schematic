@@ -12,7 +12,8 @@ import { lineMaterial } from "./materials";
 import Wren from "../../../wren/lib/wren";
 import SceneControls from "./components/scene_controls";
 import WrenModel from "./components/wren_model";
-import rendererStats from "./components/renderer_stats";
+import { nearlyEqual } from "./libs/vector";
+// import rendererStats from "./components/renderer_stats";
 
 // prettier-ignore
 const points = [
@@ -54,6 +55,7 @@ class Scene extends React.Component<IProps, IState> {
   private debugArrows = DebugArrows();
   private line: THREE.Line3 = new THREE.Line3();
   private lineHelper: THREE.Line = new THREE.Line();
+  private activeNormal: THREE.Vector3;
   private controls;
 
   Tools = {
@@ -74,7 +76,7 @@ class Scene extends React.Component<IProps, IState> {
   constructor(props) {
     super(props);
     const { width, height, colors } = props;
-    this.debugPlane.visible = false;
+    this.debugPlane.visible = true;
     this.debugPlane.add(this.debugArrows.arrows);
 
     this.camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
@@ -98,7 +100,7 @@ class Scene extends React.Component<IProps, IState> {
       // .debounceTime(1)
       .subscribe(vertex => {
         this.activeModel.updateGeometry();
-        requestAnimationFrame(this.render3);
+        // requestAnimationFrame(this.render3);
       });
 
     this.faceColor$
@@ -106,7 +108,7 @@ class Scene extends React.Component<IProps, IState> {
       .debounceTime(20)
       .subscribe(result => {
         this.activeModel.updateMaterials();
-        requestAnimationFrame(this.render3);
+        // requestAnimationFrame(this.render3);
       });
   }
 
@@ -121,19 +123,19 @@ class Scene extends React.Component<IProps, IState> {
     // this.scene.add(new Axes(10));
 
     const model = new Model(
-      [[0, 0], [2, 0], [2, 2], [1, 3], [0, 2]],
+      [[0, 0], [2, 0], [2, 2], [1, 2.01], [0, 2]],
       this.props.colors.face,
       this.props.colors.faceHighlight
     );
     this.activeModel = model;
     this.scene.add(model.mesh);
 
-    const wrenModel = new WrenModel(
-      wren,
-      this.props.colors.face,
-      this.props.colors.faceHighlight
-    );
-    this.scene.add(wrenModel.mesh);
+    // const wrenModel = new WrenModel(
+    //   wren,
+    //   this.props.colors.face,
+    //   this.props.colors.faceHighlight
+    // );
+    // this.scene.add(wrenModel.mesh);
 
     this.camera.position.x = 10;
     this.camera.position.y = 10;
@@ -142,7 +144,7 @@ class Scene extends React.Component<IProps, IState> {
 
     requestAnimationFrame(this.render3);
 
-    document.body.appendChild(rendererStats.domElement);
+    // document.body.appendChild(rendererStats.domElement);
   }
 
   handleMouseWheel = (event: React.WheelEvent<HTMLDivElement>) => {
@@ -185,76 +187,92 @@ class Scene extends React.Component<IProps, IState> {
     if (intersects.length > 0) {
       this.activeIntersection = intersects[0];
 
-      // highlight closest edge
-      const positions = this.activeModel.edgesGeometry.getAttribute("position")
-        .array as number[];
-      let minDistance = Infinity;
-      let j = undefined;
-      for (let i = 0; i < positions.length; i += 2) {
-        this.line.start.fromArray(positions, i * 3);
-        this.line.end.fromArray(positions, i * 3 + 3);
-        let closestPoint = this.line.closestPointToPoint(
-          this.activeIntersection.point
-        );
-        let distance = closestPoint.distanceTo(this.activeIntersection.point);
-        if (distance < minDistance) {
-          minDistance = distance;
-          j = i;
-        }
-      }
-
-      j *= 3;
-
-      let needsUpdate = false;
-      // prettier-ignore
-      if (minDistance < 0.08) {
-        this.lineHelper.visible = true;
-        // (this.lineHelper.geometry as THREE.Geometry).vertices[0] = new THREE.Vector3().fromArray(positions, j*3);
-        if (
-          (this.lineHelper.geometry as THREE.Geometry).vertices[0].x !== positions[j] ||
-          (this.lineHelper.geometry as THREE.Geometry).vertices[0].y !== positions[j+1] ||
-          (this.lineHelper.geometry as THREE.Geometry).vertices[0].z !== positions[j+2]
-        ) {
-          needsUpdate = true;
-          (this.lineHelper.geometry as THREE.Geometry).vertices[0] = new THREE.Vector3().fromArray(positions, j);
-        }
-        // (this.lineHelper.geometry as THREE.Geometry).vertices[1] = new THREE.Vector3().fromArray(positions, j*3+3);
-        if (
-          (this.lineHelper.geometry as THREE.Geometry).vertices[1].x !== positions[j+3] ||
-          (this.lineHelper.geometry as THREE.Geometry).vertices[1].y !== positions[j+4] ||
-          (this.lineHelper.geometry as THREE.Geometry).vertices[1].z !== positions[j+5]
-        ) {
-          needsUpdate = true;
-          (this.lineHelper.geometry as THREE.Geometry).vertices[1] = new THREE.Vector3().fromArray(positions, j+3);
-        }
-        if (needsUpdate) {
-          (this.lineHelper.geometry as THREE.Geometry).verticesNeedUpdate = true;
-          requestAnimationFrame(this.render3);
-        }
-
-      } else {
-        this.lineHelper.visible = false;
-
-        // highlight active face
-        this.activeModel.geometry.faces.forEach(face => {
-          if (face.normal.equals(this.activeIntersection.face.normal)) {
-            if (!face.color.equals(this.activeModel.faceHighlightColor)) {
-              this.faceColor$.next([face, this.props.colors.faceHighlight]);
-            }
-          } else {
-            if (!face.color.equals(this.activeModel.faceColor)) {
-              this.faceColor$.next([face, this.props.colors.face]);
-            }
+      if (!this.mouseDown) {
+        // highlight closest edge
+        const positions = this.activeModel.edgesGeometry.getAttribute(
+          "position"
+        ).array as number[];
+        let minDistance = Infinity;
+        let j = undefined;
+        for (let i = 0; i < positions.length; i += 2) {
+          this.line.start.fromArray(positions, i * 3);
+          this.line.end.fromArray(positions, i * 3 + 3);
+          let closestPoint = this.line.closestPointToPoint(
+            this.activeIntersection.point
+          );
+          let distance = closestPoint.distanceTo(this.activeIntersection.point);
+          if (distance < minDistance) {
+            minDistance = distance;
+            j = i;
           }
-        });
+        }
+
+        j *= 3;
+
+        let needsUpdate = false;
+        // prettier-ignore
+        if (minDistance < 0.08) {
+          this.lineHelper.visible = true;
+          // (this.lineHelper.geometry as THREE.Geometry).vertices[0] = new THREE.Vector3().fromArray(positions, j*3);
+          if (
+            (this.lineHelper.geometry as THREE.Geometry).vertices[0].x !== positions[j] ||
+            (this.lineHelper.geometry as THREE.Geometry).vertices[0].y !== positions[j+1] ||
+            (this.lineHelper.geometry as THREE.Geometry).vertices[0].z !== positions[j+2]
+          ) {
+            needsUpdate = true;
+            (this.lineHelper.geometry as THREE.Geometry).vertices[0] = new THREE.Vector3().fromArray(positions, j);
+          }
+          // (this.lineHelper.geometry as THREE.Geometry).vertices[1] = new THREE.Vector3().fromArray(positions, j*3+3);
+          if (
+            (this.lineHelper.geometry as THREE.Geometry).vertices[1].x !== positions[j+3] ||
+            (this.lineHelper.geometry as THREE.Geometry).vertices[1].y !== positions[j+4] ||
+            (this.lineHelper.geometry as THREE.Geometry).vertices[1].z !== positions[j+5]
+          ) {
+            needsUpdate = true;
+            (this.lineHelper.geometry as THREE.Geometry).vertices[1] = new THREE.Vector3().fromArray(positions, j+3);
+          }
+          if (needsUpdate) {
+            (this.lineHelper.geometry as THREE.Geometry).verticesNeedUpdate = true;
+            // requestAnimationFrame(this.render3);
+          }
+
+        } else {
+          this.lineHelper.visible = false;
+
+          // highlight active face
+          this.activeModel.geometry.faces.forEach(face => {
+            if (nearlyEqual(face.normal, this.activeIntersection.face.normal)) {
+              if (!face.color.equals(this.activeModel.faceHighlightColor)) {
+                this.faceColor$.next([face, this.props.colors.faceHighlight]);
+              }
+            } else {
+              if (!face.color.equals(this.activeModel.faceColor)) {
+                this.faceColor$.next([face, this.props.colors.face]);
+              }
+            }
+          });
+
+        }
       }
 
       if (this.mouseDown) {
+        const { normal } = this.activeIntersection.face;
         if (
-          this.raycaster.ray.intersectPlane(this.plane, this.planeIntersection)
+          (this.raycaster.ray.intersectPlane(
+            this.plane,
+            this.planeIntersection
+          ) &&
+            // normal.z === 1 ||
+            // normal.z === -1 ||
+            // normal.x === 1 ||
+            // normal.x === -1
+            normal.z > 0.999999) ||
+          normal.z < -0.999999 ||
+          normal.x > 0.999999 ||
+          normal.x < -0.999999
         ) {
           const toAdd = new THREE.Vector3().multiplyVectors(
-            this.activeIntersection.face.normal,
+            this.activeNormal,
             this.planeIntersection.clone().sub(this.clickPoint.clone())
           );
           let count = 0;
@@ -270,6 +288,7 @@ class Scene extends React.Component<IProps, IState> {
       }
     } else {
       this.activeIntersection = undefined;
+      this.activeNormal = undefined;
       this.activeModel.geometry.faces
         .filter(face => !face.color.equals(this.activeModel.faceColor))
         .forEach(face => {
@@ -287,14 +306,20 @@ class Scene extends React.Component<IProps, IState> {
   };
 
   handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
+    const { normal } = this.activeIntersection.face;
     this.mouseDown = true;
     if (this.activeIntersection) {
+      this.activeNormal =
+        normal.x + normal.y + normal.z < 0
+          ? normal.clone().negate()
+          : normal.clone();
+
       this.controls.enabled = false;
       this.clickPoint = this.activeIntersection.point;
 
       this.activeVertices = ((this.activeIntersection.object as THREE.Mesh)
         .geometry as THREE.Geometry).faces
-        .filter(f => f.normal.equals(this.activeIntersection.face.normal))
+        .filter(f => nearlyEqual(f.normal, normal))
         .reduce((set, f) => {
           set.add(this.activeModel.geometry.vertices[f.a]);
           set.add(this.activeModel.geometry.vertices[f.b]);
@@ -304,11 +329,7 @@ class Scene extends React.Component<IProps, IState> {
       this.originalVertices = [...this.activeVertices].map(v => v.clone());
 
       this.debugPlane.position.copy(this.activeIntersection.point);
-      this.debugPlane.lookAt(
-        this.activeIntersection.point
-          .clone()
-          .add(this.activeIntersection.face.normal)
-      );
+      this.debugPlane.lookAt(this.activeIntersection.point.clone().add(normal));
       this.plane.setFromCoplanarPoints(
         this.debugPlane.position.clone(),
         this.debugPlane.localToWorld(this.debugArrows.green.clone()),
@@ -322,7 +343,7 @@ class Scene extends React.Component<IProps, IState> {
     this.renderer.render(this.scene, this.camera);
     requestAnimationFrame(this.render3);
     // TODO: don't call this on every render iteration
-    rendererStats.update(this.renderer);
+    // rendererStats.update(this.renderer);
   };
 
   render() {
