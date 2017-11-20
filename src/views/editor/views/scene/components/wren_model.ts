@@ -3,9 +3,44 @@ import * as THREE from "three";
 import { edgeMaterial, faceMaterial, pieceExtrudeSettings } from "../materials";
 
 class WrenModel {
+  container: THREE.Object3D;
   wren: Wren;
   geometry: THREE.Geometry;
+  edgesGeometry: THREE.EdgesGeometry;
   mesh: THREE.Mesh;
+  lineSegments: THREE.LineSegments;
+
+  update = (wren: Wren, length: number) => {
+    this.wren = wren;
+    this.geometry.dispose();
+    this.geometry = new THREE.Geometry();
+    for (let i = 0; i < length; i++) {
+      this.geometry.merge(this.addFin(i));
+    }
+    this.mesh.geometry = this.geometry;
+
+    this.edgesGeometry.dispose();
+    this.edgesGeometry = new THREE.EdgesGeometry(<any>this.geometry, 1);
+    this.lineSegments.geometry = this.edgesGeometry;
+  };
+
+  constructor(wren: Wren, face, faceHighlight) {
+    this.wren = wren;
+    this.geometry = new THREE.Geometry();
+    for (let i = 0; i < 1; i++) {
+      this.geometry.merge(this.addFin(i));
+    }
+    this.mesh = new THREE.Mesh(this.geometry, faceMaterial);
+    this.edgesGeometry = new THREE.EdgesGeometry(<any>this.geometry, 1);
+    this.lineSegments = new THREE.LineSegments(
+      this.edgesGeometry,
+      edgeMaterial
+    );
+    this.mesh.add(this.lineSegments);
+
+    this.container = new THREE.Object3D();
+    this.container.add(this.mesh);
+  }
 
   addFin = distance => {
     const geometry = new THREE.Geometry();
@@ -49,20 +84,6 @@ class WrenModel {
       geometry.merge(geo);
     });
   };
-
-  constructor(wren: Wren, face, faceHighlight) {
-    this.wren = wren;
-    this.geometry = new THREE.Geometry();
-    for (let i = 0; i < 3; i++) {
-      this.geometry.merge(this.addFin(i));
-    }
-    const mesh = new THREE.Mesh(this.geometry, faceMaterial);
-    const edgesGeometry = new THREE.EdgesGeometry(<any>this.geometry, 1);
-    const lineSegments = new THREE.LineSegments(edgesGeometry, edgeMaterial);
-    mesh.add(lineSegments);
-
-    this.mesh = mesh;
-  }
 }
 
 export default WrenModel;

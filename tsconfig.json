@@ -24,5 +24,9 @@
     "dist/**/*",
     "node_modules/**/*",
     "tmp/**/*"
+  ],
+  "typeRoots" : [
+    "./node_modules/@types",
+    "./src/typings"
   ]
 }

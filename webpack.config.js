@@ -39,6 +39,10 @@ module.exports = {
         ]
       },
       {
+        test: /\.worker\.js$/,
+        use: { loader: 'worker-loader' }
+      },
+      {
         test: /\.tsx?$/,
         exclude: [/node_modules/],
         use: [

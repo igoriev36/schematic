@@ -3,17 +3,18 @@ import * as Rx from "rxjs/Rx";
 import * as THREE from "three";
 import Axes from "./components/axes";
 import DebugPlane from "./components/debug_plane";
+import LineHelper from "./components/line_helper";
 import Measurement from "./components/measurement";
 import Model from "./components/model";
 import SceneControls from "./components/scene_controls";
 import Wren from "../../../wren/lib/wren";
 import WrenModel from "./components/wren_model";
+import WrenWorker from "worker-loader!./components/wren_worker";
 import { Event } from "three";
-import { lineMaterial } from "./materials";
-import LineHelper from "./components/line_helper";
-// import * as Mouse from "./components/mouse_events";
 import { getPosition } from "./libs/utils";
+import { lineMaterial } from "./materials";
 import { nearlyEqual } from "./libs/vector";
+
 // import rendererStats from "./components/renderer_stats";
 
 // prettier-ignore
@@ -25,6 +26,8 @@ const points = [
   [100, 100],
 ];
 const wren = new Wren(points);
+
+const worker = new WrenWorker();
 
 interface IProps {
   width: number;
@@ -87,7 +90,9 @@ class Scene extends React.Component<IProps, IState> {
   private debugPlane = DebugPlane(false);
   private line: THREE.Line3 = new THREE.Line3();
   private lineHelper: LineHelper = new LineHelper();
+  private bbox: THREE.Box3 = new THREE.Box3();
   private controls;
+  private wrenModel: WrenModel;
 
   constructor(props) {
     super(props);
@@ -113,9 +118,19 @@ class Scene extends React.Component<IProps, IState> {
   setupStreams = () => {
     this.vertices$
       .map(([vector, cloned, toAdd]) => vector.copy(cloned.add(toAdd)))
-      // .debounceTime(1)
+      .debounceTime(100)
       .subscribe(vertex => {
         this.active.model.updateGeometry();
+        this.bbox.setFromObject(this.active.model.mesh);
+
+        const x = Math.round((this.bbox.max.x - this.bbox.min.x) * 100);
+        const y = Math.round((this.bbox.max.y - this.bbox.min.y) * 100);
+        this.wrenModel.container.position.copy(this.bbox.min);
+        this.wrenModel.update(
+          new Wren([[0, 0], [x, 0], [x, y], [0, y]]),
+          this.bbox.max.z - this.bbox.min.z
+        );
+
         requestAnimationFrame(this.render3);
       });
 
@@ -145,12 +160,12 @@ class Scene extends React.Component<IProps, IState> {
     this.active.model = model;
     this.scene.add(model.mesh);
 
-    // const wrenModel = new WrenModel(
-    //   wren,
-    //   this.props.colors.face,
-    //   this.props.colors.faceHighlight
-    // );
-    // this.scene.add(wrenModel.mesh);
+    this.wrenModel = new WrenModel(
+      wren,
+      this.props.colors.face,
+      this.props.colors.faceHighlight
+    );
+    this.scene.add(this.wrenModel.container);
 
     this.camera.position.x = 10;
     this.camera.position.y = 10;
