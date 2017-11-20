@@ -6,10 +6,17 @@ class Model {
   mesh: THREE.Mesh;
   faceColor: THREE.Color;
   faceHighlightColor: THREE.Color;
+  faceActiveColor: THREE.Color;
   edgesGeometry: THREE.EdgesGeometry;
   private lineSegments: THREE.LineSegments;
 
-  constructor(edges: number[][], faceColor, faceHighlightColor, amount = 5) {
+  constructor(
+    edges: number[][],
+    faceColor,
+    faceHighlightColor,
+    faceActiveColor,
+    amount = 5
+  ) {
     const shape = new THREE.Shape();
     edges.forEach(([x, y], index) => {
       if (index == 0) shape.moveTo(x, y);
@@ -21,11 +28,11 @@ class Model {
       steps: 1
     };
     this.geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-    // this.geometry = new THREE.BoxGeometry(2, 2, 2);
-    this.geometry.translate(0, 1, 0);
     this.mesh = new THREE.Mesh(this.geometry, faceMaterial);
+
     this.faceColor = new THREE.Color(faceColor);
     this.faceHighlightColor = new THREE.Color(faceHighlightColor);
+    this.faceActiveColor = new THREE.Color(faceActiveColor);
 
     this.edgesGeometry = new THREE.EdgesGeometry(<any>this.geometry, 1);
     this.lineSegments = new THREE.LineSegments(
@@ -46,6 +53,7 @@ class Model {
     this.geometry.computeFlatVertexNormals();
     this.geometry.mergeVertices();
     // todo: replace with this.edgesGeometry.fromGeometry(this.geometry)
+    this.edgesGeometry.dispose();
     this.edgesGeometry = new THREE.EdgesGeometry(<any>this.geometry, 1);
     this.lineSegments.geometry = this.edgesGeometry;
   }

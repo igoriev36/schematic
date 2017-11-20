@@ -2,16 +2,17 @@ import * as React from "react";
 import * as Rx from "rxjs/Rx";
 import * as THREE from "three";
 import Axes from "./components/axes";
+import DebugPlane from "./components/debug_plane";
 import Measurement from "./components/measurement";
 import Model from "./components/model";
-import { Event } from "three";
-import { getPosition } from "./libs/utils";
-import DebugPlane from "./components/debug_plane";
-import DebugArrows from "./components/debug_arrows";
-import { lineMaterial } from "./materials";
-import Wren from "../../../wren/lib/wren";
 import SceneControls from "./components/scene_controls";
+import Wren from "../../../wren/lib/wren";
 import WrenModel from "./components/wren_model";
+import { Event } from "three";
+import { lineMaterial } from "./materials";
+import LineHelper from "./components/line_helper";
+// import * as Mouse from "./components/mouse_events";
+import { getPosition } from "./libs/utils";
 import { nearlyEqual } from "./libs/vector";
 // import rendererStats from "./components/renderer_stats";
 
@@ -32,102 +33,116 @@ interface IProps {
   colors: any;
 }
 
-interface IState {
-  tool: string;
+interface IState {}
+
+interface IActive {
+  intersection: THREE.Intersection;
+  model: Model;
+  clickPoint: THREE.Vector3;
+  vertices: Set<THREE.Vector3>;
+  originalVertices: THREE.Vector3[];
+  plane: THREE.Plane;
+  planeIntersection: THREE.Vector3;
+  normal: THREE.Vector3;
 }
 
+// var planeGeo = new THREE.PlaneGeometry(20,20,1,1);
+var planeMat = new THREE.MeshNormalMaterial({ side: THREE.DoubleSide });
+// var boxGeo = new THREE.BoxGeometry(1,1,1)
+// var plane = new THREE.Mesh(planeGeo, planeMat);
+// // var box = new THREE.Mesh(boxGeo, planeMat)
+// // box.position.x = -3;
+// // plane.add(box)
+// // plane.lookAt(new THREE.Vector3(0,1,0))
+
+const Box = (v: THREE.Vector3): THREE.Mesh => {
+  const b = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+  const m = new THREE.Mesh(b, planeMat);
+  m.position.copy(v);
+  return m;
+};
+
 class Scene extends React.Component<IProps, IState> {
-  private activeIntersection: THREE.Intersection;
-  private activeModel: Model;
-  private activeVertices: Set<THREE.Vector3> = new Set();
-  private originalVertices: THREE.Vector3[];
-  private camera: THREE.Camera;
+  private active: IActive = {
+    intersection: undefined,
+    model: undefined,
+    clickPoint: undefined,
+    vertices: new Set(),
+    originalVertices: undefined,
+    normal: undefined,
+    plane: new THREE.Plane(),
+    planeIntersection: new THREE.Vector3()
+  };
+  // private activeModel: Model;
+  // private activeNormal: THREE.Vector3;
+  // private activeVertices
+
+  private camera: THREE.PerspectiveCamera;
   private faceColor$: Rx.Subject<any> = new Rx.Subject();
   private mouseDown: Boolean = false;
-  private plane: THREE.Plane = new THREE.Plane();
-  private planeIntersection: THREE.Vector3 = new THREE.Vector3();
   private raycaster: THREE.Raycaster = new THREE.Raycaster();
   private renderer: THREE.WebGLRenderer;
   private scene: THREE.Scene = new THREE.Scene();
   private vertices$: Rx.Subject<any> = new Rx.Subject();
-  private clickPoint: THREE.Vector3;
-  private debugPlane = DebugPlane();
-  private debugArrows = DebugArrows();
+  private debugPlane = DebugPlane(false);
   private line: THREE.Line3 = new THREE.Line3();
-  private lineHelper: THREE.Line = new THREE.Line();
-  private activeNormal: THREE.Vector3;
+  private lineHelper: LineHelper = new LineHelper();
   private controls;
-
-  Tools = {
-    EXTRUDE: "Extrude"
-  };
-
-  state: IState = {
-    tool: this.Tools.EXTRUDE
-  };
-
-  set tool(newTool) {
-    this.setState(prevState => {
-      prevState.tool = newTool;
-      return prevState;
-    });
-  }
 
   constructor(props) {
     super(props);
-    const { width, height, colors } = props;
-    this.debugPlane.visible = true;
-    this.debugPlane.add(this.debugArrows.arrows);
 
+    this.setupScene();
+    this.setupStreams();
+  }
+
+  shouldComponentUpdate() {
+    return false;
+  }
+
+  setupScene = () => {
+    const { width, height, colors } = this.props;
     this.camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setClearColor(colors.bg);
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(devicePixelRatio);
-
-    this.scene.add(this.debugPlane);
-
-    var lineGeometry = new THREE.Geometry();
-    lineGeometry.vertices.push(new THREE.Vector3(0, 0, 0));
-    lineGeometry.vertices.push(new THREE.Vector3(0, 0, 0));
-    this.lineHelper = new THREE.Line(lineGeometry, lineMaterial);
-    this.scene.add(this.lineHelper);
-
     this.controls = SceneControls(this.camera, this.renderer.domElement);
+  };
 
+  setupStreams = () => {
     this.vertices$
       .map(([vector, cloned, toAdd]) => vector.copy(cloned.add(toAdd)))
       // .debounceTime(1)
       .subscribe(vertex => {
-        this.activeModel.updateGeometry();
-        // requestAnimationFrame(this.render3);
+        this.active.model.updateGeometry();
+        requestAnimationFrame(this.render3);
       });
 
     this.faceColor$
       .map(([face, color]) => face.color.setHex(color))
       .debounceTime(20)
       .subscribe(result => {
-        this.activeModel.updateMaterials();
-        // requestAnimationFrame(this.render3);
+        this.active.model.updateMaterials();
+        requestAnimationFrame(this.render3);
       });
-  }
-
-  componentWillUnmount() {
-    this.faceColor$.unsubscribe();
-    this.vertices$.unsubscribe();
-  }
+  };
 
   componentDidMount() {
     (this.refs.container as HTMLElement).appendChild(this.renderer.domElement);
 
-    // this.scene.add(new Axes(10));
+    this.scene.add(this.debugPlane);
+    this.scene.add(this.lineHelper);
+    this.scene.add(new Axes(10));
+    // this.scene.add(plane);
 
     const model = new Model(
       [[0, 0], [2, 0], [2, 2], [1, 2.01], [0, 2]],
       this.props.colors.face,
-      this.props.colors.faceHighlight
+      this.props.colors.faceHighlight,
+      this.props.colors.faceActive
     );
-    this.activeModel = model;
+    this.active.model = model;
     this.scene.add(model.mesh);
 
     // const wrenModel = new WrenModel(
@@ -144,31 +159,15 @@ class Scene extends React.Component<IProps, IState> {
 
     requestAnimationFrame(this.render3);
 
+    this.controls.addEventListener("change", this.render3);
+
     // document.body.appendChild(rendererStats.domElement);
   }
 
-  handleMouseWheel = (event: React.WheelEvent<HTMLDivElement>) => {
-    // TODO: fix bug where target is broken after zoom
-    // https://stackoverflow.com/questions/23994206/zoom-to-object-in-threejs/30514984#30514984
-    const factor = -event.deltaY / 50;
-    const [x, y] = getPosition(
-      event.clientX,
-      event.clientY,
-      this.props.width,
-      this.props.height
-    );
-    var vector = new THREE.Vector3(x, y, 1);
-    vector.unproject(this.camera);
-    vector.sub(this.camera.position);
-    this.camera.position.addVectors(
-      this.camera.position,
-      vector.setLength(factor)
-    );
-    this.controls.target.addVectors(
-      this.controls.target,
-      vector.setLength(factor)
-    );
-  };
+  componentWillUnmount() {
+    this.faceColor$.unsubscribe();
+    this.vertices$.unsubscribe();
+  }
 
   handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     const [x, y] = getPosition(
@@ -178,183 +177,182 @@ class Scene extends React.Component<IProps, IState> {
       this.props.height
     );
     this.raycaster.setFromCamera({ x, y }, this.camera);
-
     const intersects = this.raycaster.intersectObject(
-      this.activeModel.mesh,
+      this.active.model.mesh,
       false
     );
 
     if (intersects.length > 0) {
-      this.activeIntersection = intersects[0];
-
-      if (!this.mouseDown) {
-        // highlight closest edge
-        const positions = this.activeModel.edgesGeometry.getAttribute(
-          "position"
-        ).array as number[];
-        let minDistance = Infinity;
-        let j = undefined;
-        for (let i = 0; i < positions.length; i += 2) {
-          this.line.start.fromArray(positions, i * 3);
-          this.line.end.fromArray(positions, i * 3 + 3);
-          let closestPoint = this.line.closestPointToPoint(
-            this.activeIntersection.point
-          );
-          let distance = closestPoint.distanceTo(this.activeIntersection.point);
-          if (distance < minDistance) {
-            minDistance = distance;
-            j = i;
-          }
-        }
-
-        j *= 3;
-
-        let needsUpdate = false;
-        // prettier-ignore
-        if (minDistance < 0.08) {
-          this.lineHelper.visible = true;
-          // (this.lineHelper.geometry as THREE.Geometry).vertices[0] = new THREE.Vector3().fromArray(positions, j*3);
-          if (
-            (this.lineHelper.geometry as THREE.Geometry).vertices[0].x !== positions[j] ||
-            (this.lineHelper.geometry as THREE.Geometry).vertices[0].y !== positions[j+1] ||
-            (this.lineHelper.geometry as THREE.Geometry).vertices[0].z !== positions[j+2]
-          ) {
-            needsUpdate = true;
-            (this.lineHelper.geometry as THREE.Geometry).vertices[0] = new THREE.Vector3().fromArray(positions, j);
-          }
-          // (this.lineHelper.geometry as THREE.Geometry).vertices[1] = new THREE.Vector3().fromArray(positions, j*3+3);
-          if (
-            (this.lineHelper.geometry as THREE.Geometry).vertices[1].x !== positions[j+3] ||
-            (this.lineHelper.geometry as THREE.Geometry).vertices[1].y !== positions[j+4] ||
-            (this.lineHelper.geometry as THREE.Geometry).vertices[1].z !== positions[j+5]
-          ) {
-            needsUpdate = true;
-            (this.lineHelper.geometry as THREE.Geometry).vertices[1] = new THREE.Vector3().fromArray(positions, j+3);
-          }
-          if (needsUpdate) {
-            (this.lineHelper.geometry as THREE.Geometry).verticesNeedUpdate = true;
-            // requestAnimationFrame(this.render3);
-          }
-
-        } else {
-          this.lineHelper.visible = false;
-
-          // highlight active face
-          this.activeModel.geometry.faces.forEach(face => {
-            if (nearlyEqual(face.normal, this.activeIntersection.face.normal)) {
-              if (!face.color.equals(this.activeModel.faceHighlightColor)) {
-                this.faceColor$.next([face, this.props.colors.faceHighlight]);
-              }
-            } else {
-              if (!face.color.equals(this.activeModel.faceColor)) {
-                this.faceColor$.next([face, this.props.colors.face]);
-              }
-            }
-          });
-
-        }
-      }
-
-      if (this.mouseDown) {
-        const { normal } = this.activeIntersection.face;
-        if (
-          (this.raycaster.ray.intersectPlane(
-            this.plane,
-            this.planeIntersection
-          ) &&
-            // normal.z === 1 ||
-            // normal.z === -1 ||
-            // normal.x === 1 ||
-            // normal.x === -1
-            normal.z > 0.999999) ||
-          normal.z < -0.999999 ||
-          normal.x > 0.999999 ||
-          normal.x < -0.999999
-        ) {
-          const toAdd = new THREE.Vector3().multiplyVectors(
-            this.activeNormal,
-            this.planeIntersection.clone().sub(this.clickPoint.clone())
-          );
-          let count = 0;
-          this.activeVertices.forEach(v => {
-            this.vertices$.next([
-              v,
-              this.originalVertices[count].clone(),
-              toAdd
-            ]);
-            count++;
-          });
-        }
-      }
+      this.active.intersection = intersects[0];
     } else {
-      this.activeIntersection = undefined;
-      this.activeNormal = undefined;
-      this.activeModel.geometry.faces
-        .filter(face => !face.color.equals(this.activeModel.faceColor))
-        .forEach(face => {
-          this.faceColor$.next([face, this.props.colors.face]);
-        });
+      this.active.intersection = undefined;
     }
 
-    // TODO: send a done/commit signal, so it doesn't need to debounce
+    if (this.active.vertices.size > 0) {
+      if (
+        this.raycaster.ray.intersectPlane(
+          this.active.plane,
+          this.active.planeIntersection
+        )
+      ) {
+        const toAdd = new THREE.Vector3().multiplyVectors(
+          this.active.normal,
+          this.active.planeIntersection.clone().sub(this.active.clickPoint)
+        );
+
+        let count = 0;
+        this.active.vertices.forEach(v => {
+          this.vertices$.next([
+            v,
+            this.active.originalVertices[count].clone(),
+            toAdd
+          ]);
+          count++;
+        });
+      }
+    } else {
+      // highlight active face
+      this.active.model.geometry.faces.forEach(face => {
+        if (this.active.intersection) {
+          if (nearlyEqual(face.normal, this.active.intersection.face.normal)) {
+            if (!face.color.equals(this.active.model.faceHighlightColor)) {
+              this.faceColor$.next([face, this.props.colors.faceHighlight]);
+            }
+          } else {
+            if (!face.color.equals(this.active.model.faceColor)) {
+              this.faceColor$.next([face, this.props.colors.face]);
+            }
+          }
+        } else {
+          if (!face.color.equals(this.active.model.faceColor)) {
+            this.faceColor$.next([face, this.props.colors.face]);
+          }
+        }
+      });
+    }
+
+    // // TODO: send a done/commit signal, so it doesn't need to debounce
+  };
+
+  handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
+    this.mouseDown = true;
+    if (this.active.intersection) {
+      this.active.clickPoint = this.active.intersection.point;
+
+      //   this.activeNormal =
+      //     normal.x + normal.y + normal.z < 0
+      //       ? normal.clone().negate()
+      //       : normal.clone();
+
+      this.active.normal = this.active.intersection.face.normal
+        .clone()
+        .normalize();
+      if (
+        this.active.normal.x + this.active.normal.y + this.active.normal.z <
+        0
+      )
+        this.active.normal.negate();
+      // console.log(this.active.normal)
+      this.controls.enabled = false;
+
+      this.active.vertices = ((this.active.intersection.object as THREE.Mesh)
+        .geometry as THREE.Geometry).faces
+        .filter(f =>
+          nearlyEqual(f.normal, this.active.intersection.face.normal)
+        )
+        .reduce((set, f) => {
+          if (!f.color.equals(this.active.model.faceActiveColor)) {
+            this.faceColor$.next([f, this.props.colors.faceActive]);
+          }
+          set.add(this.active.model.geometry.vertices[f.a]);
+          set.add(this.active.model.geometry.vertices[f.b]);
+          set.add(this.active.model.geometry.vertices[f.c]);
+          return set;
+        }, new Set());
+      this.active.originalVertices = [...this.active.vertices].map(v =>
+        v.clone()
+      );
+
+      this.debugPlane.position.copy(this.active.intersection.point);
+      this.debugPlane.lookAt(
+        this.active.intersection.point
+          .clone()
+          .add(this.active.intersection.face.normal)
+      );
+
+      // this.scene.add(Box(this.debugPlane.position))
+      // this.scene.add(Box(this.debugPlane.localToWorld(this.debugPlane.userData.green)))
+      // this.scene.add(Box(this.debugPlane.localToWorld(this.debugPlane.userData.blue)))
+      // this.debugPlane.updateMatrixWorld(true);
+      // this.debugPlane.userData.pts().map(pt => {
+      //   this.scene.add(Box(pt))
+      // })
+
+      const [a, b, c] = this.debugPlane.userData.pts();
+      this.active.plane.setFromCoplanarPoints(a, b, c);
+
+      // plane.position.copy(this.debugPlane.position)
+      // plane.setRotationFromEuler(this.debugPlane.rotation)
+      // plane.rotateY(Math.PI/2)
+
+      // const coplanarPoint = this.active.plane.coplanarPoint();
+      // const focalPoint = new THREE.Vector3()
+      //                     .copy(coplanarPoint)
+      //                     .add(this.active.plane.normal);
+
+      this.handleMouseMove(event);
+    }
   };
 
   handleMouseUp = (event: React.MouseEvent<HTMLDivElement>) => {
     this.mouseDown = false;
     this.controls.enabled = true;
-    this.activeVertices.clear();
+    this.active.clickPoint = undefined;
+    this.active.vertices.clear();
+    this.active.originalVertices = undefined;
+    this.handleMouseMove(event);
   };
 
-  handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
-    const { normal } = this.activeIntersection.face;
-    this.mouseDown = true;
-    if (this.activeIntersection) {
-      this.activeNormal =
-        normal.x + normal.y + normal.z < 0
-          ? normal.clone().negate()
-          : normal.clone();
-
-      this.controls.enabled = false;
-      this.clickPoint = this.activeIntersection.point;
-
-      this.activeVertices = ((this.activeIntersection.object as THREE.Mesh)
-        .geometry as THREE.Geometry).faces
-        .filter(f => nearlyEqual(f.normal, normal))
-        .reduce((set, f) => {
-          set.add(this.activeModel.geometry.vertices[f.a]);
-          set.add(this.activeModel.geometry.vertices[f.b]);
-          set.add(this.activeModel.geometry.vertices[f.c]);
-          return set;
-        }, new Set());
-      this.originalVertices = [...this.activeVertices].map(v => v.clone());
-
-      this.debugPlane.position.copy(this.activeIntersection.point);
-      this.debugPlane.lookAt(this.activeIntersection.point.clone().add(normal));
-      this.plane.setFromCoplanarPoints(
-        this.debugPlane.position.clone(),
-        this.debugPlane.localToWorld(this.debugArrows.green.clone()),
-        this.debugPlane.localToWorld(this.debugArrows.blue.clone())
-      );
-    }
-  };
+  // handleMouseWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+  //   console.log(event);
+  //   // // TODO: fix bug where target is broken after zoom
+  //   // // https://stackoverflow.com/questions/23994206/zoom-to-object-in-threejs/30514984#30514984
+  //   // const factor = -event.deltaY / 50;
+  //   // const [x, y] = getPosition(
+  //   //   event.clientX,
+  //   //   event.clientY,
+  //   //   this.props.width,
+  //   //   this.props.height
+  //   // );
+  //   // var vector = new THREE.Vector3(x, y, 1);
+  //   // vector.unproject(this.camera);
+  //   // vector.sub(this.camera.position);
+  //   // this.camera.position.addVectors(
+  //   //   this.camera.position,
+  //   //   vector.setLength(factor)
+  //   // );
+  //   // this.controls.target.addVectors(
+  //   //   this.controls.target,
+  //   //   vector.setLength(factor)
+  //   // );
+  // };
 
   render3 = () => {
-    // console.log("render");
     this.renderer.render(this.scene, this.camera);
-    requestAnimationFrame(this.render3);
+    // requestAnimationFrame(this.render3);
     // TODO: don't call this on every render iteration
     // rendererStats.update(this.renderer);
   };
 
   render() {
+    const { width, height } = this.props;
     return (
       <div
         id="container"
         ref="container"
-        onMouseUp={this.handleMouseUp}
-        onMouseDown={this.handleMouseDown}
         onMouseMove={this.handleMouseMove}
-        onWheel={this.handleMouseWheel}
+        onMouseDown={this.handleMouseDown}
+        onMouseUp={this.handleMouseUp}
       >
         <Measurement title="width" value={100} x={20} y={30} />
         <Measurement title="height" value={220} x={20} y={60} />
@@ -362,5 +360,7 @@ class Scene extends React.Component<IProps, IState> {
     );
   }
 }
+
+// onWheel={Mouse.handleMouseWheel}
 
 export default Scene;
