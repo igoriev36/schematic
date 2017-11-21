@@ -19,6 +19,16 @@ export const faceMaterial = new THREE.MeshBasicMaterial({
   // polygonOffsetUnits: 100
 });
 
+export const plyMaterial = new THREE.MeshBasicMaterial({
+  // color: 0x303030,
+  color: "#B2A181",
+  polygonOffset: true,
+  polygonOffsetFactor: 1,
+  overdraw: 0.5,
+  side: THREE.FrontSide,
+  transparent: false
+});
+
 export const lineMaterial = new THREE.LineBasicMaterial({
   color: Config.colors.line,
   linewidth: 4,

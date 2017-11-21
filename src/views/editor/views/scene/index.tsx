@@ -9,13 +9,13 @@ import Model from "./components/model";
 import SceneControls from "./components/scene_controls";
 import Wren from "../../../wren/lib/wren";
 import WrenModel from "./components/wren_model";
-import WrenWorker from "worker-loader!./components/wren_worker";
+// import WrenWorker from "worker-loader!./components/wren_worker";
 import { Event } from "three";
 import { getPosition } from "./libs/utils";
 import { lineMaterial } from "./materials";
 import { nearlyEqual } from "./libs/vector";
 
-// import rendererStats from "./components/renderer_stats";
+import rendererStats from "./components/renderer_stats";
 
 // prettier-ignore
 const points = [
@@ -27,7 +27,7 @@ const points = [
 ];
 const wren = new Wren(points);
 
-const worker = new WrenWorker();
+// const worker = new WrenWorker();
 
 interface IProps {
   width: number;
@@ -176,7 +176,7 @@ class Scene extends React.Component<IProps, IState> {
 
     this.controls.addEventListener("change", this.render3);
 
-    // document.body.appendChild(rendererStats.domElement);
+    document.body.appendChild(rendererStats.domElement);
   }
 
   componentWillUnmount() {
@@ -356,7 +356,7 @@ class Scene extends React.Component<IProps, IState> {
     this.renderer.render(this.scene, this.camera);
     // requestAnimationFrame(this.render3);
     // TODO: don't call this on every render iteration
-    // rendererStats.update(this.renderer);
+    rendererStats.update(this.renderer);
   };
 
   render() {

@@ -101,6 +101,14 @@ class SVG extends React.Component<IProps> {
               />
             ))
           : ""}
+        {/*
+        {wren.sides.map((wall, index) => (
+          <polygon
+            className="wall"
+            key={wall.toString()}
+            points={wall.join(",")}
+          />
+        ))} */}
 
         {wren.points.map(([x, y], i) => (
           <DragPoint

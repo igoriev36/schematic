@@ -3,7 +3,7 @@ import { pointOnLine, distance, Point } from "./point";
 it("calculates point on line", () => {
   const points: Point[] = [[0, 0], [10, 10]];
   const result = [1.414213562373095, 1.414213562373095];
-  expect(pointOnLine(2)(...points)).toEqual(result);
+  expect(pointOnLine(...points)(2)).toEqual(result);
 });
 
 it("calculates distance between 2 points", () => {

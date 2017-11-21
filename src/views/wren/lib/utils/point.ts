@@ -8,9 +8,8 @@ const _getXY = (start: Point, end: Point): Point => [
 /**
  * Returns a point at an absolute distance between two points.
  */
-export const pointOnLine = (distance: number) => (
-  start?: Point,
-  end?: Point
+export const pointOnLine = (start?: Point, end?: Point) => (
+  distance: number
 ): Point => {
   const [x, y] = _getXY(start, end);
   const hypot = Math.hypot(x, y);

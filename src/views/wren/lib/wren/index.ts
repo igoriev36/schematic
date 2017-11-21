@@ -11,7 +11,9 @@ import {
 import Block from "./block";
 import Corner from "./corner";
 import Wall from "./wall";
-import { flatMap } from "lodash";
+// import Side from "./side";
+import VanillaWall from "./vanilla_wall";
+import { flatMap, flatten } from "lodash";
 
 import { loopifyInPairs, loopifyInGroups, safeIndex } from "../utils/list";
 import { offset } from "../clipper";
@@ -40,6 +42,9 @@ class Wren {
   finPieces: Point[][] = [];
   outerWalls: Point[][] = [];
   innerWalls: Point[][] = [];
+  // sides: Side[] = [];
+  vanillaOuterWalls: VanillaWall[] = [];
+  vanillaInnerWalls: VanillaWall[] = [];
 
   constructor(points) {
     // offset with 0 to normalize direction of points (clockwise or counter-clockwise)
@@ -59,6 +64,12 @@ class Wren {
     this.calculateFinPieces();
     this.calculateWalls("innerWalls", this.innerPoints, -120);
     this.calculateWalls("outerWalls", this.outerPoints, 120);
+    // this.calculateSides(this.outerPoints);
+    this.calculateVanillaWalls(
+      "vanillaInnerWalls",
+      offset(points, { DELTA: -finWidth - 1.8 })
+    );
+    this.calculateVanillaWalls("vanillaOuterWalls", this.outerPoints);
   }
 
   private calculateLines = (_points): Line[] => {
@@ -73,12 +84,12 @@ class Wren {
       // get all points going outwards from start, to the center
       let i = 0;
       for (i = pointDistance; i < halfLength; i += pointDistance * 2) {
-        subPoints.push(pointOnLine(i)(start, end));
+        subPoints.push(pointOnLine(start, end)(i));
       }
       // get all points going inwards from end, to the center
       const lastPoints: Point[] = [];
       for (i = pointDistance; i < halfLength; i += pointDistance * 2) {
-        lastPoints.push(pointOnLine(i)(end, start));
+        lastPoints.push(pointOnLine(end, start)(i));
       }
       // reverse the inward points and join with outward points, to get a
       // contiguous list of points, going outwards from start to end
@@ -184,6 +195,26 @@ class Wren {
           points[index(i + 1)]
         ]).points
       );
+    }
+  };
+
+  // private calculateSides = points => {
+  //   const index = safeIndex(points.length);
+  //   for (let i = 0; i < points.length; i++) {
+  //     this.sides.push(
+  //       new Side(points[i], points[index(i + 1)], {
+  //         x: points[index(i + 1)][0],
+  //         y: points[index(i + 1)][1],
+  //         z: 0
+  //       }, { y: Math.PI / 2 })
+  //     )
+  //   }
+  // };
+
+  private calculateVanillaWalls = (name, points) => {
+    const index = safeIndex(points.length);
+    for (let i = 0; i < points.length; i++) {
+      this[name].push(new VanillaWall(120, points[i], points[index(i + 1)]));
     }
   };
 }
