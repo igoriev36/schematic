@@ -7,9 +7,9 @@ import Layers from "./layers";
 // prettier-ignore
 const points: ISVGProps["points"] = [
   [100, 400],
-  [500, 400],
-  [500, 200],
-  [300, 50],
+  [300, 400],
+  [300, 200],
+  [220, 50],
   [100, 100],
 ];
 
@@ -31,7 +31,7 @@ class App extends React.Component<{}, IState> {
   state: IState = {
     action: [this.actions.NOTHING, undefined],
     points: [],
-    layers: new Set(["reinforcers", "finPieces", "outerWalls", "innerWalls"])
+    layers: new Set(["reinforcers", "finPieces"]) //, "outerWalls", "innerWalls"
   };
 
   componentDidMount() {

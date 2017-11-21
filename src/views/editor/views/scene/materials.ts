@@ -26,7 +26,8 @@ export const plyMaterial = new THREE.MeshBasicMaterial({
   polygonOffsetFactor: 1,
   overdraw: 0.5,
   side: THREE.FrontSide,
-  transparent: false
+  transparent: false,
+  wireframe: false
 });
 
 export const lineMaterial = new THREE.LineBasicMaterial({

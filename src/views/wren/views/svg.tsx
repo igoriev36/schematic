@@ -13,6 +13,8 @@ export interface IProps extends React.Props<{}> {
   setPointPosition: any;
 }
 
+const Circle = radius => ([x, y]) => <circle r={radius} cx={x} cy={y} />;
+
 class SVG extends React.Component<IProps> {
   svgPoint = (x, y) => {
     let point = (this.refs.svg as SVGSVGElement).createSVGPoint();
@@ -50,7 +52,6 @@ class SVG extends React.Component<IProps> {
       >
         {/* {wren.outerPoints.map(Circle(2))} */}
         {/* {wren.innerPoints.map(Circle(2))} */}
-        {/* {wren.lines.map(line => line.subPoints.map(Circle(1)))} */}
         {/* {wren.lines.map(line => line.outerSubPoints.map(Circle(1)))} */}
         {/* {wren.lines.map((line, index) =>
           line.blocks.map(block => (
@@ -101,6 +102,9 @@ class SVG extends React.Component<IProps> {
               />
             ))
           : ""}
+
+        {wren.columns.map(x => <line key={x} x1={x} x2={x} y1={0} y2={1000} />)}
+
         {/*
         {wren.sides.map((wall, index) => (
           <polygon
@@ -122,6 +126,8 @@ class SVG extends React.Component<IProps> {
             auto={false}
           />
         ))}
+
+        {wren.lines.map(line => line.subPoints.map(Circle(1)))}
       </svg>
     );
   }

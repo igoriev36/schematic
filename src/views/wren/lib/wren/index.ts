@@ -32,6 +32,8 @@ interface Line {
   corner?: Corner;
 }
 
+const maxSpan = 360;
+
 class Wren {
   innerPoints: Point[];
   outerPoints: Point[];
@@ -42,6 +44,7 @@ class Wren {
   finPieces: Point[][] = [];
   outerWalls: Point[][] = [];
   innerWalls: Point[][] = [];
+  columns: number[] = [];
   // sides: Side[] = [];
   vanillaOuterWalls: VanillaWall[] = [];
   vanillaInnerWalls: VanillaWall[] = [];
@@ -50,6 +53,16 @@ class Wren {
     // offset with 0 to normalize direction of points (clockwise or counter-clockwise)
     this.points = offset(points, { DELTA: 0 });
     const pointBounds = bounds(points);
+    const width = pointBounds.maxX - pointBounds.minX;
+    const height = pointBounds.maxY - pointBounds.minY;
+
+    const numColumns = Math.floor(width / maxSpan);
+    for (let i = 0; i < numColumns; i++) {
+      this.columns.push(pointBounds.minX + width / (numColumns + 1) * (i + 1));
+    }
+
+    // console.log({width, height})
+
     this.normalizedPoints = this.points.map(([x, y]): Point => [
       // x - pointBounds.offsetX, // centered point
       x - pointBounds.minX,
@@ -118,7 +131,8 @@ class Wren {
             innerSubPoints[i],
             innerSubPoints[i + 1],
             outerSubPoints[i + 1],
-            outerSubPoints[i]
+            outerSubPoints[i],
+            this.columns
           )
         );
       }
@@ -166,6 +180,14 @@ class Wren {
         ...nextLine.blocks.slice(0, 2)
       ];
 
+      // for (let j = 0; j < this.columns.length; j++) {
+      //   if (
+      //     this.columns[j] > prevLine.outerSubPoints[prevLine.outerSubPoints.length-1][0] &&
+      //     this.columns[j] < nextLine.outerSubPoints[0][0]
+      //   ) {
+      //   }
+      // }
+
       this.reinforcers.push(
         flatMap(blocks, geometry => geometry.outerPoints).concat(
           flatMap(blocks.reverse(), geometry => geometry.innerPoints)
@@ -184,6 +206,7 @@ class Wren {
         )
       );
     }
+    console.log(this.finPieces);
   };
 
   private calculateWalls = (name, points, distance) => {

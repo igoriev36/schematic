@@ -20,9 +20,9 @@ import rendererStats from "./components/renderer_stats";
 // prettier-ignore
 const points = [
   [100, 400],
-  [500, 400],
-  [500, 200],
-  [300, 50],
+  [300, 400],
+  [300, 200],
+  [220, 50],
   [100, 100],
 ];
 const wren = new Wren(points);
@@ -118,19 +118,9 @@ class Scene extends React.Component<IProps, IState> {
   setupStreams = () => {
     this.vertices$
       .map(([vector, cloned, toAdd]) => vector.copy(cloned.add(toAdd)))
-      .debounceTime(100)
+      // .debounceTime(100)
       .subscribe(vertex => {
         this.active.model.updateGeometry();
-        this.bbox.setFromObject(this.active.model.mesh);
-
-        const x = Math.round((this.bbox.max.x - this.bbox.min.x) * 100);
-        const y = Math.round((this.bbox.max.y - this.bbox.min.y) * 100);
-        this.wrenModel.container.position.copy(this.bbox.min);
-        this.wrenModel.update(
-          new Wren([[0, 0], [x, 0], [x, y], [0, y]]),
-          this.bbox.max.z - this.bbox.min.z
-        );
-
         requestAnimationFrame(this.render3);
       });
 
@@ -320,6 +310,15 @@ class Scene extends React.Component<IProps, IState> {
   };
 
   handleMouseUp = (event: React.MouseEvent<HTMLDivElement>) => {
+    this.bbox.setFromObject(this.active.model.mesh);
+    const x = Math.round((this.bbox.max.x - this.bbox.min.x) * 100);
+    const y = Math.round((this.bbox.max.y - this.bbox.min.y) * 100);
+    this.wrenModel.container.position.copy(this.bbox.min);
+    this.wrenModel.update(
+      new Wren([[0, 0], [x, 0], [x, y], [0, y]]),
+      this.bbox.max.z - this.bbox.min.z
+    );
+
     this.mouseDown = false;
     this.controls.enabled = true;
     this.active.clickPoint = undefined;
