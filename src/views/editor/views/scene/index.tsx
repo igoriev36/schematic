@@ -1,6 +1,7 @@
 import * as React from "react";
 import * as Rx from "rxjs/Rx";
 import * as THREE from "three";
+import CuttingPlane from "./components/cutting_plane";
 import DebugPlane from "./components/debug_plane";
 import LineHelper from "./components/line_helper";
 import Measurement from "./components/measurement";
@@ -8,25 +9,19 @@ import Model from "./components/model";
 import SceneControls from "./components/scene_controls";
 import Wren from "../../../wren/lib/wren";
 import WrenModel from "./components/wren_model";
-import Plane from "./components/plane";
-// import WrenWorker from "worker-loader!./components/wren_worker";
+import rendererStats from "./components/renderer_stats";
 import { Event } from "three";
 import { getPosition } from "./libs/utils";
 import { lineMaterial, pointsMaterial, cutLineMaterial } from "./materials";
 import { nearlyEqual } from "./libs/vector";
+// import WrenWorker from "worker-loader!./components/wren_worker";
 
-import rendererStats from "./components/renderer_stats";
+const planeX = new CuttingPlane(1, "x");
+const planeY = new CuttingPlane(1, "y");
+const planeZ = new CuttingPlane(2, "z");
+const cutLines = new THREE.Object3D();
 
-// prettier-ignore
-const points = [
-  [100, 400],
-  [300, 500],
-  [300, 200],
-  [220, 50],
-  [100, 100],
-];
-const wren = new Wren(points);
-
+const wren = new Wren([]);
 // const worker = new WrenWorker();
 
 interface IProps {
@@ -35,8 +30,6 @@ interface IProps {
   devicePixelRatio: number;
   colors: any;
 }
-
-interface IState {}
 
 interface IActive {
   intersection: THREE.Intersection;
@@ -49,69 +42,7 @@ interface IActive {
   normal: THREE.Vector3;
 }
 
-// const Box = (v: THREE.Vector3): THREE.Mesh => {
-//   const b = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-//   const m = new THREE.Mesh(b, planeMat);
-//   m.position.copy(v);
-//   return m;
-// };
-
-const planeX = new Plane(1, "x");
-const planeY = new Plane(1, "y");
-const planeZ = new Plane(2, "z");
-const cutLines = new THREE.Object3D();
-
-const drawIntersectionPoints = (plane, model) => {
-  // console.log(model)
-  let pointsOfIntersection = new THREE.Geometry();
-  let a = new THREE.Vector3();
-  let b = new THREE.Vector3();
-  let c = new THREE.Vector3();
-  let planePointA = new THREE.Vector3();
-  let planePointB = new THREE.Vector3();
-  let planePointC = new THREE.Vector3();
-  let lineAB = new THREE.Line3();
-  let lineBC = new THREE.Line3();
-  let lineCA = new THREE.Line3();
-  let pointOfIntersection = new THREE.Vector3();
-
-  const setPointOfIntersection = (line, plane) => {
-    pointOfIntersection = plane.intersectLine(line);
-    if (pointOfIntersection) {
-      pointsOfIntersection.vertices.push(pointOfIntersection.clone());
-    }
-  };
-
-  let mathPlane = new THREE.Plane();
-  plane.mesh.localToWorld(
-    planePointA.copy(plane.geometry.vertices[plane.geometry.faces[0].a])
-  );
-  plane.mesh.localToWorld(
-    planePointB.copy(plane.geometry.vertices[plane.geometry.faces[0].b])
-  );
-  plane.mesh.localToWorld(
-    planePointC.copy(plane.geometry.vertices[plane.geometry.faces[0].c])
-  );
-  mathPlane.setFromCoplanarPoints(planePointA, planePointB, planePointC);
-  model.geometry.faces.forEach(face => {
-    model.mesh.localToWorld(a.copy(model.geometry.vertices[face.a]));
-    model.mesh.localToWorld(b.copy(model.geometry.vertices[face.b]));
-    model.mesh.localToWorld(c.copy(model.geometry.vertices[face.c]));
-    lineAB = new THREE.Line3(a, b);
-    lineBC = new THREE.Line3(b, c);
-    lineCA = new THREE.Line3(c, a);
-    setPointOfIntersection(lineAB, mathPlane);
-    setPointOfIntersection(lineBC, mathPlane);
-    setPointOfIntersection(lineCA, mathPlane);
-  });
-
-  var points = new THREE.Points(pointsOfIntersection, pointsMaterial);
-  cutLines.add(points);
-  var lines = new THREE.LineSegments(pointsOfIntersection, cutLineMaterial);
-  cutLines.add(lines);
-};
-
-class Scene extends React.Component<IProps, IState> {
+class Scene extends React.Component<IProps> {
   private active: IActive = {
     intersection: undefined,
     model: undefined,
@@ -126,18 +57,18 @@ class Scene extends React.Component<IProps, IState> {
   // private activeNormal: THREE.Vector3;
   // private activeVertices
 
+  private bbox: THREE.Box3 = new THREE.Box3();
   private camera: THREE.PerspectiveCamera;
+  private controls;
+  private debugPlane = DebugPlane(false);
   private faceColor$: Rx.Subject<any> = new Rx.Subject();
+  private line: THREE.Line3 = new THREE.Line3();
+  private lineHelper: LineHelper = new LineHelper();
   private mouseDown: Boolean = false;
   private raycaster: THREE.Raycaster = new THREE.Raycaster();
   private renderer: THREE.WebGLRenderer;
   private scene: THREE.Scene = new THREE.Scene();
   private vertices$: Rx.Subject<any> = new Rx.Subject();
-  private debugPlane = DebugPlane(false);
-  private line: THREE.Line3 = new THREE.Line3();
-  private lineHelper: LineHelper = new LineHelper();
-  private bbox: THREE.Box3 = new THREE.Box3();
-  private controls;
   private wrenModel: WrenModel;
 
   constructor(props) {
@@ -171,9 +102,14 @@ class Scene extends React.Component<IProps, IState> {
           (cutLines.children[0] as THREE.Mesh).geometry.dispose();
           cutLines.remove(cutLines.children[0]);
         }
-        drawIntersectionPoints(planeX, this.active.model);
-        drawIntersectionPoints(planeY, this.active.model);
-        drawIntersectionPoints(planeZ, this.active.model);
+        planeX.intersect(this.active.model);
+        planeY.intersect(this.active.model);
+        planeZ.intersect(this.active.model);
+
+        cutLines.add(planeX.intersectionLines);
+        cutLines.add(planeY.intersectionLines);
+        cutLines.add(planeZ.intersectionLines);
+
         requestAnimationFrame(this.render3);
       });
 
@@ -192,7 +128,6 @@ class Scene extends React.Component<IProps, IState> {
     this.scene.add(this.debugPlane);
     this.scene.add(this.lineHelper);
     // this.scene.add(new THREE.AxisHelper(10))
-    // this.scene.add(plane);
 
     const model = new Model(
       [[0, 0], [2, 0], [2, 2], [0, 2]],
@@ -207,12 +142,6 @@ class Scene extends React.Component<IProps, IState> {
     this.scene.add(planeZ.mesh);
     this.scene.add(planeY.mesh);
     this.scene.add(planeX.mesh);
-
-    // drawIntersectionPoints(planeX, this.active.model);
-    // drawIntersectionPoints(planeY, this.active.model);
-    // drawIntersectionPoints(planeZ, this.active.model);
-
-    // ---
 
     // this.wrenModel = new WrenModel(
     //   wren,
@@ -246,6 +175,14 @@ class Scene extends React.Component<IProps, IState> {
       this.props.height
     );
     this.raycaster.setFromCamera({ x, y }, this.camera);
+
+    const cutLineIntersects = this.raycaster.intersectObject(
+      planeX.mesh,
+      false
+    );
+    // if (true || cutLineIntersects.length > 0) {
+
+    // } else {
     const intersects = this.raycaster.intersectObject(
       this.active.model.mesh,
       false
@@ -299,6 +236,7 @@ class Scene extends React.Component<IProps, IState> {
         }
       });
     }
+    // }
 
     // // TODO: send a done/commit signal, so it doesn't need to debounce
   };
@@ -349,25 +287,8 @@ class Scene extends React.Component<IProps, IState> {
           .add(this.active.intersection.face.normal)
       );
 
-      // this.scene.add(Box(this.debugPlane.position))
-      // this.scene.add(Box(this.debugPlane.localToWorld(this.debugPlane.userData.green)))
-      // this.scene.add(Box(this.debugPlane.localToWorld(this.debugPlane.userData.blue)))
-      // this.debugPlane.updateMatrixWorld(true);
-      // this.debugPlane.userData.pts().map(pt => {
-      //   this.scene.add(Box(pt))
-      // })
-
       const [a, b, c] = this.debugPlane.userData.pts();
       this.active.plane.setFromCoplanarPoints(a, b, c);
-
-      // plane.position.copy(this.debugPlane.position)
-      // plane.setRotationFromEuler(this.debugPlane.rotation)
-      // plane.rotateY(Math.PI/2)
-
-      // const coplanarPoint = this.active.plane.coplanarPoint();
-      // const focalPoint = new THREE.Vector3()
-      //                     .copy(coplanarPoint)
-      //                     .add(this.active.plane.normal);
 
       this.handleMouseMove(event);
     }
@@ -390,30 +311,6 @@ class Scene extends React.Component<IProps, IState> {
     this.active.originalVertices = undefined;
     this.handleMouseMove(event);
   };
-
-  // handleMouseWheel = (event: React.WheelEvent<HTMLDivElement>) => {
-  //   console.log(event);
-  //   // // TODO: fix bug where target is broken after zoom
-  //   // // https://stackoverflow.com/questions/23994206/zoom-to-object-in-threejs/30514984#30514984
-  //   // const factor = -event.deltaY / 50;
-  //   // const [x, y] = getPosition(
-  //   //   event.clientX,
-  //   //   event.clientY,
-  //   //   this.props.width,
-  //   //   this.props.height
-  //   // );
-  //   // var vector = new THREE.Vector3(x, y, 1);
-  //   // vector.unproject(this.camera);
-  //   // vector.sub(this.camera.position);
-  //   // this.camera.position.addVectors(
-  //   //   this.camera.position,
-  //   //   vector.setLength(factor)
-  //   // );
-  //   // this.controls.target.addVectors(
-  //   //   this.controls.target,
-  //   //   vector.setLength(factor)
-  //   // );
-  // };
 
   render3 = () => {
     this.renderer.render(this.scene, this.camera);
@@ -438,7 +335,5 @@ class Scene extends React.Component<IProps, IState> {
     );
   }
 }
-
-// onWheel={Mouse.handleMouseWheel}
 
 export default Scene;
