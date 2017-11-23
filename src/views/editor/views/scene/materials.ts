@@ -14,8 +14,9 @@ export const faceMaterial = new THREE.MeshBasicMaterial({
   polygonOffsetFactor: 1,
   overdraw: 0.5,
   side: THREE.FrontSide,
-  // wireframe: true,
-  transparent: false
+  wireframe: false,
+  transparent: true,
+  opacity: 0.3
   // polygonOffsetUnits: 100
 });
 
@@ -26,7 +27,8 @@ export const plyMaterial = new THREE.MeshBasicMaterial({
   polygonOffsetFactor: 1,
   overdraw: 0.5,
   side: THREE.FrontSide,
-  transparent: false
+  transparent: false,
+  wireframe: false
 });
 
 export const lineMaterial = new THREE.LineBasicMaterial({
@@ -42,3 +44,18 @@ export const pieceExtrudeSettings = {
   steps: 1,
   transparent: false
 };
+
+export const planeMaterial = new THREE.MeshNormalMaterial({
+  side: THREE.DoubleSide,
+  opacity: 0.1,
+  transparent: true
+});
+
+export const pointsMaterial = new THREE.PointsMaterial({
+  size: 0.5,
+  color: 0xffff00
+});
+
+export const cutLineMaterial = new THREE.LineBasicMaterial({
+  color: 0xaaaaaa
+});

@@ -32,6 +32,14 @@ interface Line {
   corner?: Corner;
 }
 
+interface IDimensions {
+  width?: number;
+  height?: number;
+  footprint?: number;
+}
+
+const maxSpan = 360;
+
 class Wren {
   innerPoints: Point[];
   outerPoints: Point[];
@@ -42,14 +50,31 @@ class Wren {
   finPieces: Point[][] = [];
   outerWalls: Point[][] = [];
   innerWalls: Point[][] = [];
+  columns: number[] = [];
   // sides: Side[] = [];
   vanillaOuterWalls: VanillaWall[] = [];
   vanillaInnerWalls: VanillaWall[] = [];
+  dimensions: IDimensions = {};
 
   constructor(points) {
     // offset with 0 to normalize direction of points (clockwise or counter-clockwise)
     this.points = offset(points, { DELTA: 0 });
     const pointBounds = bounds(points);
+
+    this.dimensions.width = pointBounds.maxX - pointBounds.minX;
+    this.dimensions.height = pointBounds.maxY - pointBounds.minY;
+
+    const numColumns = Math.floor(this.dimensions.width / maxSpan);
+    for (let i = 0; i < numColumns; i++) {
+      this.columns.push(
+        pointBounds.minX + this.dimensions.width / (numColumns + 1) * (i + 1)
+      );
+    }
+
+    this.dimensions.footprint = this.dimensions.width * this.dimensions.height;
+
+    // console.log({width, height})
+
     this.normalizedPoints = this.points.map(([x, y]): Point => [
       // x - pointBounds.offsetX, // centered point
       x - pointBounds.minX,
@@ -62,8 +87,10 @@ class Wren {
 
     this.calculateReinforcers();
     this.calculateFinPieces();
-    this.calculateWalls("innerWalls", this.innerPoints, -120);
-    this.calculateWalls("outerWalls", this.outerPoints, 120);
+
+    // this.calculateWalls("innerWalls", this.innerPoints, -120);
+    // this.calculateWalls("outerWalls", this.outerPoints, 120);
+
     // this.calculateSides(this.outerPoints);
     this.calculateVanillaWalls(
       "vanillaInnerWalls",
@@ -118,7 +145,8 @@ class Wren {
             innerSubPoints[i],
             innerSubPoints[i + 1],
             outerSubPoints[i + 1],
-            outerSubPoints[i]
+            outerSubPoints[i],
+            this.columns
           )
         );
       }
@@ -166,6 +194,14 @@ class Wren {
         ...nextLine.blocks.slice(0, 2)
       ];
 
+      // for (let j = 0; j < this.columns.length; j++) {
+      //   if (
+      //     this.columns[j] > prevLine.outerSubPoints[prevLine.outerSubPoints.length-1][0] &&
+      //     this.columns[j] < nextLine.outerSubPoints[0][0]
+      //   ) {
+      //   }
+      // }
+
       this.reinforcers.push(
         flatMap(blocks, geometry => geometry.outerPoints).concat(
           flatMap(blocks.reverse(), geometry => geometry.innerPoints)
@@ -184,6 +220,7 @@ class Wren {
         )
       );
     }
+    console.log(this.finPieces);
   };
 
   private calculateWalls = (name, points, distance) => {

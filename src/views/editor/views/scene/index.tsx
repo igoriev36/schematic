@@ -1,7 +1,6 @@
 import * as React from "react";
 import * as Rx from "rxjs/Rx";
 import * as THREE from "three";
-import Axes from "./components/axes";
 import DebugPlane from "./components/debug_plane";
 import LineHelper from "./components/line_helper";
 import Measurement from "./components/measurement";
@@ -9,10 +8,11 @@ import Model from "./components/model";
 import SceneControls from "./components/scene_controls";
 import Wren from "../../../wren/lib/wren";
 import WrenModel from "./components/wren_model";
+import Plane from "./components/plane";
 // import WrenWorker from "worker-loader!./components/wren_worker";
 import { Event } from "three";
 import { getPosition } from "./libs/utils";
-import { lineMaterial } from "./materials";
+import { lineMaterial, pointsMaterial, cutLineMaterial } from "./materials";
 import { nearlyEqual } from "./libs/vector";
 
 import rendererStats from "./components/renderer_stats";
@@ -20,9 +20,9 @@ import rendererStats from "./components/renderer_stats";
 // prettier-ignore
 const points = [
   [100, 400],
-  [500, 400],
-  [500, 200],
-  [300, 50],
+  [300, 500],
+  [300, 200],
+  [220, 50],
   [100, 100],
 ];
 const wren = new Wren(points);
@@ -49,20 +49,66 @@ interface IActive {
   normal: THREE.Vector3;
 }
 
-// var planeGeo = new THREE.PlaneGeometry(20,20,1,1);
-var planeMat = new THREE.MeshNormalMaterial({ side: THREE.DoubleSide });
-// var boxGeo = new THREE.BoxGeometry(1,1,1)
-// var plane = new THREE.Mesh(planeGeo, planeMat);
-// // var box = new THREE.Mesh(boxGeo, planeMat)
-// // box.position.x = -3;
-// // plane.add(box)
-// // plane.lookAt(new THREE.Vector3(0,1,0))
+// const Box = (v: THREE.Vector3): THREE.Mesh => {
+//   const b = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+//   const m = new THREE.Mesh(b, planeMat);
+//   m.position.copy(v);
+//   return m;
+// };
 
-const Box = (v: THREE.Vector3): THREE.Mesh => {
-  const b = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-  const m = new THREE.Mesh(b, planeMat);
-  m.position.copy(v);
-  return m;
+const planeX = new Plane(1, "x");
+const planeY = new Plane(1, "y");
+const planeZ = new Plane(2, "z");
+const cutLines = new THREE.Object3D();
+
+const drawIntersectionPoints = (plane, model) => {
+  // console.log(model)
+  let pointsOfIntersection = new THREE.Geometry();
+  let a = new THREE.Vector3();
+  let b = new THREE.Vector3();
+  let c = new THREE.Vector3();
+  let planePointA = new THREE.Vector3();
+  let planePointB = new THREE.Vector3();
+  let planePointC = new THREE.Vector3();
+  let lineAB = new THREE.Line3();
+  let lineBC = new THREE.Line3();
+  let lineCA = new THREE.Line3();
+  let pointOfIntersection = new THREE.Vector3();
+
+  const setPointOfIntersection = (line, plane) => {
+    pointOfIntersection = plane.intersectLine(line);
+    if (pointOfIntersection) {
+      pointsOfIntersection.vertices.push(pointOfIntersection.clone());
+    }
+  };
+
+  let mathPlane = new THREE.Plane();
+  plane.mesh.localToWorld(
+    planePointA.copy(plane.geometry.vertices[plane.geometry.faces[0].a])
+  );
+  plane.mesh.localToWorld(
+    planePointB.copy(plane.geometry.vertices[plane.geometry.faces[0].b])
+  );
+  plane.mesh.localToWorld(
+    planePointC.copy(plane.geometry.vertices[plane.geometry.faces[0].c])
+  );
+  mathPlane.setFromCoplanarPoints(planePointA, planePointB, planePointC);
+  model.geometry.faces.forEach(face => {
+    model.mesh.localToWorld(a.copy(model.geometry.vertices[face.a]));
+    model.mesh.localToWorld(b.copy(model.geometry.vertices[face.b]));
+    model.mesh.localToWorld(c.copy(model.geometry.vertices[face.c]));
+    lineAB = new THREE.Line3(a, b);
+    lineBC = new THREE.Line3(b, c);
+    lineCA = new THREE.Line3(c, a);
+    setPointOfIntersection(lineAB, mathPlane);
+    setPointOfIntersection(lineBC, mathPlane);
+    setPointOfIntersection(lineCA, mathPlane);
+  });
+
+  var points = new THREE.Points(pointsOfIntersection, pointsMaterial);
+  cutLines.add(points);
+  var lines = new THREE.LineSegments(pointsOfIntersection, cutLineMaterial);
+  cutLines.add(lines);
 };
 
 class Scene extends React.Component<IProps, IState> {
@@ -76,7 +122,7 @@ class Scene extends React.Component<IProps, IState> {
     plane: new THREE.Plane(),
     planeIntersection: new THREE.Vector3()
   };
-  // private activeModel: Model;
+  // private active.model: Model;
   // private activeNormal: THREE.Vector3;
   // private activeVertices
 
@@ -118,19 +164,16 @@ class Scene extends React.Component<IProps, IState> {
   setupStreams = () => {
     this.vertices$
       .map(([vector, cloned, toAdd]) => vector.copy(cloned.add(toAdd)))
-      .debounceTime(100)
+      // .debounceTime(100)
       .subscribe(vertex => {
         this.active.model.updateGeometry();
-        this.bbox.setFromObject(this.active.model.mesh);
-
-        const x = Math.round((this.bbox.max.x - this.bbox.min.x) * 100);
-        const y = Math.round((this.bbox.max.y - this.bbox.min.y) * 100);
-        this.wrenModel.container.position.copy(this.bbox.min);
-        this.wrenModel.update(
-          new Wren([[0, 0], [x, 0], [x, y], [0, y]]),
-          this.bbox.max.z - this.bbox.min.z
-        );
-
+        while (cutLines.children.length > 0) {
+          (cutLines.children[0] as THREE.Mesh).geometry.dispose();
+          cutLines.remove(cutLines.children[0]);
+        }
+        drawIntersectionPoints(planeX, this.active.model);
+        drawIntersectionPoints(planeY, this.active.model);
+        drawIntersectionPoints(planeZ, this.active.model);
         requestAnimationFrame(this.render3);
       });
 
@@ -148,11 +191,11 @@ class Scene extends React.Component<IProps, IState> {
 
     this.scene.add(this.debugPlane);
     this.scene.add(this.lineHelper);
-    this.scene.add(new Axes(10));
+    // this.scene.add(new THREE.AxisHelper(10))
     // this.scene.add(plane);
 
     const model = new Model(
-      [[0, 0], [2, 0], [2, 2], [1, 2.01], [0, 2]],
+      [[0, 0], [2, 0], [2, 2], [0, 2]],
       this.props.colors.face,
       this.props.colors.faceHighlight,
       this.props.colors.faceActive
@@ -160,12 +203,23 @@ class Scene extends React.Component<IProps, IState> {
     this.active.model = model;
     this.scene.add(model.mesh);
 
-    this.wrenModel = new WrenModel(
-      wren,
-      this.props.colors.face,
-      this.props.colors.faceHighlight
-    );
-    this.scene.add(this.wrenModel.container);
+    this.scene.add(cutLines);
+    this.scene.add(planeZ.mesh);
+    this.scene.add(planeY.mesh);
+    this.scene.add(planeX.mesh);
+
+    // drawIntersectionPoints(planeX, this.active.model);
+    // drawIntersectionPoints(planeY, this.active.model);
+    // drawIntersectionPoints(planeZ, this.active.model);
+
+    // ---
+
+    // this.wrenModel = new WrenModel(
+    //   wren,
+    //   this.props.colors.face,
+    //   this.props.colors.faceHighlight
+    // );
+    // this.scene.add(this.wrenModel.container);
 
     this.camera.position.x = 10;
     this.camera.position.y = 10;
@@ -320,6 +374,15 @@ class Scene extends React.Component<IProps, IState> {
   };
 
   handleMouseUp = (event: React.MouseEvent<HTMLDivElement>) => {
+    // this.bbox.setFromObject(this.active.model.mesh);
+    // const x = Math.round((this.bbox.max.x - this.bbox.min.x) * 100);
+    // const y = Math.round((this.bbox.max.y - this.bbox.min.y) * 100);
+    // this.wrenModel.container.position.copy(this.bbox.min);
+    // this.wrenModel.update(
+    //   new Wren([[0, 0], [x, 0], [x, y], [0, y]]),
+    //   this.bbox.max.z - this.bbox.min.z
+    // );
+
     this.mouseDown = false;
     this.controls.enabled = true;
     this.active.clickPoint = undefined;

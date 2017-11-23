@@ -3,13 +3,15 @@ import * as ReactDOM from "react-dom";
 import SVG, { IProps as ISVGProps } from "./svg";
 import { Point } from "../lib/utils/point";
 import Layers from "./layers";
+import Stats from "./stats";
+// import Wren from "../lib/wren";
 
 // prettier-ignore
 const points: ISVGProps["points"] = [
   [100, 400],
-  [500, 400],
-  [500, 200],
-  [300, 50],
+  [300, 400],
+  [300, 200],
+  [220, 50],
   [100, 100],
 ];
 
@@ -31,7 +33,7 @@ class App extends React.Component<{}, IState> {
   state: IState = {
     action: [this.actions.NOTHING, undefined],
     points: [],
-    layers: new Set(["reinforcers", "finPieces", "outerWalls", "innerWalls"])
+    layers: new Set(["reinforcers", "finPieces"]) //, "outerWalls", "innerWalls"
   };
 
   componentDidMount() {
@@ -82,6 +84,7 @@ class App extends React.Component<{}, IState> {
           setPointPosition={this.setPointPosition}
         />
         <Layers layers={this.state.layers} toggleLayer={this.toggleLayer} />
+        <Stats dimensions={{ footprint: 10, width: 20, height: 20 }} />
       </div>
     );
   }
