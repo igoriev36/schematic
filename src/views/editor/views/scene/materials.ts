@@ -28,7 +28,8 @@ export const plyMaterial = new THREE.MeshLambertMaterial({
   overdraw: 0.5,
   side: THREE.FrontSide,
   transparent: false,
-  wireframe: false
+  wireframe: false,
+  flatShading: true
 });
 
 export const lineMaterial = new THREE.LineBasicMaterial({

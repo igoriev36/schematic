@@ -3,7 +3,7 @@ import * as Rx from "rxjs/Rx";
 import * as THREE from "three";
 import CuttingPlane from "./components/cutting_plane";
 import DebugPlane from "./components/debug_plane";
-import LineHelper from "./components/line_helper";
+// import LineHelper from "./components/line_helper";
 import Measurement from "./components/measurement";
 import Model from "./components/model";
 import SceneControls from "./components/scene_controls";
@@ -11,18 +11,21 @@ import Wren from "../../../wren/lib/wren";
 import WrenModel from "./components/wren_model";
 import rendererStats from "./components/renderer_stats";
 import { Event } from "three";
-import { getPosition } from "./libs/utils";
+import { getPosition, get2DCoords } from "./libs/utils";
 import { lineMaterial, pointsMaterial, cutLineMaterial } from "./materials";
 import { nearlyEqual } from "./libs/vector";
 // import WrenWorker from "worker-loader!./components/wren_worker";
+// const worker = new WrenWorker();
 
-const planeX = new CuttingPlane(1, "x");
-const planeY = new CuttingPlane(1, "y");
-const planeZ = new CuttingPlane(2, "z");
-const cutLines = new THREE.Object3D();
+// const planeX = new CuttingPlane(1, "x");
+// const planeY = new CuttingPlane(1, "y");
+// const planeZ = new CuttingPlane(2, "z");
+// const cutLines = new THREE.Object3D();
+
+const heightEl = document.querySelector("span.measurement") as HTMLSpanElement;
+console.log({ heightEl });
 
 const wren = new Wren([]);
-// const worker = new WrenWorker();
 
 interface IProps {
   width: number;
@@ -42,7 +45,31 @@ interface IActive {
   normal: THREE.Vector3;
 }
 
-class Scene extends React.Component<IProps> {
+interface IState {
+  labels: any;
+}
+
+class Scene extends React.Component<IProps, IState> {
+  state = {
+    labels: {
+      width: {
+        value: 100,
+        x: 20,
+        y: 30
+      },
+      length: {
+        value: 220,
+        x: 20,
+        y: 60
+      },
+      height: {
+        value: 220,
+        x: 20,
+        y: 90
+      }
+    }
+  };
+
   private active: IActive = {
     intersection: undefined,
     model: undefined,
@@ -53,9 +80,6 @@ class Scene extends React.Component<IProps> {
     plane: new THREE.Plane(),
     planeIntersection: new THREE.Vector3()
   };
-  // private active.model: Model;
-  // private activeNormal: THREE.Vector3;
-  // private activeVertices
 
   private bbox: THREE.Box3 = new THREE.Box3();
   private camera: THREE.PerspectiveCamera;
@@ -63,7 +87,7 @@ class Scene extends React.Component<IProps> {
   private debugPlane = DebugPlane(false);
   private faceColor$: Rx.Subject<any> = new Rx.Subject();
   private line: THREE.Line3 = new THREE.Line3();
-  private lineHelper: LineHelper = new LineHelper();
+  // private lineHelper: LineHelper = new LineHelper();
   private mouseDown: Boolean = false;
   private raycaster: THREE.Raycaster = new THREE.Raycaster();
   private renderer: THREE.WebGLRenderer;
@@ -78,9 +102,9 @@ class Scene extends React.Component<IProps> {
     this.setupStreams();
   }
 
-  shouldComponentUpdate() {
-    return false;
-  }
+  // shouldComponentUpdate() {
+  //   return false;
+  // }
 
   setupScene = () => {
     const { width, height, colors } = this.props;
@@ -97,19 +121,19 @@ class Scene extends React.Component<IProps> {
       .map(([vector, cloned, toAdd]) => vector.copy(cloned.add(toAdd)))
       // .debounceTime(100)
       .subscribe(vertex => {
+        this.wrenModel.hide();
         this.active.model.updateGeometry();
-        while (cutLines.children.length > 0) {
-          (cutLines.children[0] as THREE.Mesh).geometry.dispose();
-          cutLines.remove(cutLines.children[0]);
-        }
-        planeX.intersect(this.active.model);
-        planeY.intersect(this.active.model);
-        planeZ.intersect(this.active.model);
+        // while (cutLines.children.length > 0) {
+        //   (cutLines.children[0] as THREE.Mesh).geometry.dispose();
+        //   cutLines.remove(cutLines.children[0]);
+        // }
+        // planeX.intersect(this.active.model);
+        // planeY.intersect(this.active.model);
+        // planeZ.intersect(this.active.model);
 
-        cutLines.add(planeX.intersectionLines);
-        cutLines.add(planeY.intersectionLines);
-        cutLines.add(planeZ.intersectionLines);
-
+        // cutLines.add(planeX.intersectionLines);
+        // cutLines.add(planeY.intersectionLines);
+        // cutLines.add(planeZ.intersectionLines);
 
         requestAnimationFrame(this.render3);
       });
@@ -127,11 +151,12 @@ class Scene extends React.Component<IProps> {
     (this.refs.container as HTMLElement).appendChild(this.renderer.domElement);
 
     this.scene.add(this.debugPlane);
-    this.scene.add(this.lineHelper);
+    // this.scene.add(this.lineHelper);
     // this.scene.add(new THREE.AxisHelper(10))
 
     const model = new Model(
-      [[0, 0], [2, 0], [2, 2], [1, 3], [0, 2]],
+      [[0, 0], [2, 0], [2, 2], [0, 2]],
+      // [[0, 0], [2, 0], [2, 2], [1, 3], [0, 2]],
       this.props.colors.face,
       this.props.colors.faceHighlight,
       this.props.colors.faceActive
@@ -139,10 +164,10 @@ class Scene extends React.Component<IProps> {
     this.active.model = model;
     this.scene.add(model.mesh);
 
-    this.scene.add(cutLines);
-    this.scene.add(planeZ.mesh);
-    this.scene.add(planeY.mesh);
-    this.scene.add(planeX.mesh);
+    // this.scene.add(cutLines);
+    // this.scene.add(planeZ.mesh);
+    // this.scene.add(planeY.mesh);
+    // this.scene.add(planeX.mesh);
 
     this.wrenModel = new WrenModel(
       wren,
@@ -163,18 +188,20 @@ class Scene extends React.Component<IProps> {
     this.camera.position.z = 10;
     this.camera.lookAt(new THREE.Vector3(0, 0, 0));
 
+    const m = new THREE.ShadowMaterial({ side: THREE.DoubleSide });
     const pg = new THREE.PlaneGeometry(10, 10, 1, 1);
     pg.rotateX(Math.PI / 2);
-    const m = new THREE.ShadowMaterial({ side: THREE.DoubleSide });
     const me = new THREE.Mesh(pg, m);
     me.receiveShadow = true;
-    this.scene.add(me);
+    me.castShadow = true;
 
-    requestAnimationFrame(this.render3);
+    this.scene.add(me);
 
     this.controls.addEventListener("change", this.render3);
 
     document.body.appendChild(rendererStats.domElement);
+
+    requestAnimationFrame(this.render3);
   }
 
   componentWillUnmount() {
@@ -191,10 +218,10 @@ class Scene extends React.Component<IProps> {
     );
     this.raycaster.setFromCamera({ x, y }, this.camera);
 
-    const cutLineIntersects = this.raycaster.intersectObject(
-      planeX.mesh,
-      false
-    );
+    // const cutLineIntersects = this.raycaster.intersectObject(
+    //   planeX.mesh,
+    //   false
+    // );
     // if (true || cutLineIntersects.length > 0) {
 
     // } else {
@@ -253,6 +280,57 @@ class Scene extends React.Component<IProps> {
     }
     // }
 
+    this.setState(prevState => {
+      const coords = get2DCoords(
+        new THREE.Vector3(
+          this.bbox.min.x + (this.bbox.max.x - this.bbox.min.x) / 2,
+          this.bbox.min.y,
+          this.bbox.max.z + 0.2
+        ),
+        this.camera
+      );
+      prevState.labels.width = {
+        x: coords.x - 25,
+        y: coords.y - 10,
+        value: (this.bbox.max.x - this.bbox.min.x).toFixed(2) + "m"
+      };
+      return prevState;
+    });
+
+    this.setState(prevState => {
+      const coords = get2DCoords(
+        new THREE.Vector3(
+          this.bbox.max.x + 0.1,
+          this.bbox.min.y - (this.bbox.min.y - this.bbox.max.y) / 2,
+          this.bbox.min.z - 0.05
+        ),
+        this.camera
+      );
+      prevState.labels.height = {
+        x: coords.x - 25,
+        y: coords.y - 10,
+        value: (this.bbox.max.y - this.bbox.min.y).toFixed(2) + "m"
+      };
+      return prevState;
+    });
+
+    this.setState(prevState => {
+      const coords = get2DCoords(
+        new THREE.Vector3(
+          this.bbox.max.x + 0.2,
+          this.bbox.min.y,
+          this.bbox.min.z + (this.bbox.max.z - this.bbox.min.z) / 2
+        ),
+        this.camera
+      );
+      prevState.labels.length = {
+        x: coords.x - 25,
+        y: coords.y - 10,
+        value: (this.bbox.max.z - this.bbox.min.z).toFixed(2) + "m"
+      };
+      return prevState;
+    });
+
     // // TODO: send a done/commit signal, so it doesn't need to debounce
   };
 
@@ -310,6 +388,7 @@ class Scene extends React.Component<IProps> {
   };
 
   handleMouseUp = (event: React.MouseEvent<HTMLDivElement>) => {
+    this.wrenModel.show();
     this.bbox.setFromObject(this.active.model.mesh);
     const x = Math.round((this.bbox.max.x - this.bbox.min.x) * 100);
     const y = Math.round((this.bbox.max.y - this.bbox.min.y) * 100);
@@ -325,16 +404,10 @@ class Scene extends React.Component<IProps> {
     this.active.vertices.clear();
     this.active.originalVertices = undefined;
     this.handleMouseMove(event);
+    requestAnimationFrame(this.render3);
   };
 
-  render3 = () => {
-    this.renderer.render(this.scene, this.camera);
-    // requestAnimationFrame(this.render3);
-    // TODO: don't call this on every render iteration
-    rendererStats.update(this.renderer);
-  };
-
-  handleKeyUp = (event: React.MouseEvent<HTMLDivElement>) => {
+  handleDoubleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     this.scene.add(this.wrenModel.container);
     this.bbox.setFromObject(this.active.model.mesh);
     const x = Math.round((this.bbox.max.x - this.bbox.min.x) * 100);
@@ -344,10 +417,19 @@ class Scene extends React.Component<IProps> {
       new Wren([[0, 0], [x, 0], [x, y], [0, y]]),
       this.bbox.max.z - this.bbox.min.z
     );
+    requestAnimationFrame(this.render3);
+  };
+
+  render3 = () => {
+    this.renderer.render(this.scene, this.camera);
+    // requestAnimationFrame(this.render3);
+    // TODO: don't call this on every render iteration
+    rendererStats.update(this.renderer);
   };
 
   render() {
     const { width, height } = this.props;
+    const { labels } = this.state;
     return (
       <div
         id="container"
@@ -355,10 +437,26 @@ class Scene extends React.Component<IProps> {
         onMouseMove={this.handleMouseMove}
         onMouseDown={this.handleMouseDown}
         onMouseUp={this.handleMouseUp}
-        onDoubleClick={this.handleKeyUp}
+        onDoubleClick={this.handleDoubleClick}
       >
-        <Measurement title="width" value={100} x={20} y={30} />
-        <Measurement title="height" value={220} x={20} y={60} />
+        <Measurement
+          title="width"
+          value={labels.width.value}
+          x={labels.width.x}
+          y={labels.width.y}
+        />
+        <Measurement
+          title="height"
+          value={labels.height.value}
+          x={labels.height.x}
+          y={labels.height.y}
+        />
+        <Measurement
+          title="length"
+          value={labels.length.value}
+          x={labels.length.x}
+          y={labels.length.y}
+        />
       </div>
     );
   }

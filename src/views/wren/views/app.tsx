@@ -51,7 +51,7 @@ class App extends React.Component<{}, IState> {
   setActivePoint = id => e => {
     e.stopPropagation();
     this.setState(prevState => {
-      prevState.action = [this.actions.DRAGGING_POINTS, [id]];
+      // prevState.action = [this.actions.DRAGGING_POINTS, [id]];
       return prevState;
     });
   };

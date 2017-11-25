@@ -12,6 +12,8 @@ function SceneControls(
   controls.enableDamping = true;
   controls.dampingFactor = 0.4;
   // controls.maxPolarAngle = Math.PI / 2.1;
+  controls.minPolarAngle = Math.PI * 0.05;
+  controls.maxPolarAngle = Math.PI * 0.8;
   controls.enableZoom = true;
   return controls;
 }

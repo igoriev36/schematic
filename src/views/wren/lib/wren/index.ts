@@ -220,7 +220,7 @@ class Wren {
         )
       );
     }
-    console.log(this.finPieces);
+    // console.log(this.finPieces);
   };
 
   private calculateWalls = (name, points, distance) => {

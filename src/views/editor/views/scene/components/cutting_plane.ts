@@ -66,7 +66,7 @@ class CuttingPlane {
     this.geometry = new THREE.PlaneGeometry(12, 12, 1, 1);
     this.material = planeMaterial;
     this.mesh = new THREE.Mesh(this.geometry, this.material);
-    this.material.visible = false;
+    this.material.visible = true;
 
     this.intersectionPoints = new THREE.Points(
       this.intersectionGeometry,

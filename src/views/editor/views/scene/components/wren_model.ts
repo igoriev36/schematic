@@ -15,9 +15,11 @@ class WrenModel {
     this.wren = wren;
     this.geometry.dispose();
     this.geometry = new THREE.Geometry();
+
+    let geometry: THREE.Geometry = this.addFin(0);
     // length
     for (let i = 0; i < length; i++) {
-      this.geometry.merge(this.addFin(i));
+      this.geometry.merge(geometry.clone().translate(0, 0, i));
     }
     this.mesh.geometry = this.geometry;
 
@@ -39,7 +41,6 @@ class WrenModel {
       edgeMaterial
     );
     this.mesh.add(this.lineSegments);
-
     this.container = new THREE.Object3D();
     this.container.add(this.mesh);
     this.container.castShadow = true;
@@ -52,7 +53,6 @@ class WrenModel {
     this.addPieces(geometry, "finPieces", distance * 1.2 + 0.01);
     this.addPieces(geometry, "reinforcers", distance * 1.2 + 0.01 + 0.0036);
     this.addPieces(geometry, "finPieces", distance * 1.2 + 1 + 0.01);
-
     this.addVanillaWalls("vanillaInnerWalls", geometry, distance);
     this.addVanillaWalls("vanillaOuterWalls", geometry, distance);
 
@@ -111,6 +111,14 @@ class WrenModel {
       geo.translate(0, 0, index);
       geometry.merge(geo);
     });
+  };
+
+  hide = () => {
+    this.mesh.visible = false;
+  };
+
+  show = () => {
+    this.mesh.visible = true;
   };
 }
 
