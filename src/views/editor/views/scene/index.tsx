@@ -17,10 +17,10 @@ import { nearlyEqual } from "./libs/vector";
 // import WrenWorker from "worker-loader!./components/wren_worker";
 // const worker = new WrenWorker();
 
-// const planeX = new CuttingPlane(1, "x");
-// const planeY = new CuttingPlane(1, "y");
+const planeX = new CuttingPlane(1, "x");
+const planeY = new CuttingPlane(1, "y");
 // const planeZ = new CuttingPlane(2, "z");
-// const cutLines = new THREE.Object3D();
+const cutLines = new THREE.Object3D();
 
 const heightEl = document.querySelector("span.measurement") as HTMLSpanElement;
 console.log({ heightEl });
@@ -95,6 +95,10 @@ class Scene extends React.Component<IProps, IState> {
   private vertices$: Rx.Subject<any> = new Rx.Subject();
   private wrenModel: WrenModel;
 
+  private points = [];
+
+  private xPlanes = new Set();
+
   constructor(props) {
     super(props);
 
@@ -124,19 +128,36 @@ class Scene extends React.Component<IProps, IState> {
         this.wrenModel.hide();
         this.active.model.updateGeometry();
 
-        // while (cutLines.children.length > 0) {
-        //   (cutLines.children[0] as THREE.Mesh).geometry.dispose();
-        //   cutLines.remove(cutLines.children[0]);
-        // }
-        // planeX.intersect(this.active.model);
-        // planeY.intersect(this.active.model);
+        while (cutLines.children.length > 0) {
+          (cutLines.children[0] as THREE.Mesh).geometry.dispose();
+          cutLines.remove(cutLines.children[0]);
+        }
+        planeX.intersect(this.active.model);
+        planeY.intersect(this.active.model);
         // planeZ.intersect(this.active.model);
 
-        // cutLines.add(planeX.intersectionLines);
-        // cutLines.add(planeY.intersectionLines);
+        // cutLines.add(planeX.intersectionPoints);
+        // cutLines.add(planeY.intersectionPoints);
+        cutLines.add(planeX.intersectionLines);
+        cutLines.add(planeY.intersectionLines);
         // cutLines.add(planeZ.intersectionLines);
 
         this.bbox.setFromObject(this.active.model.mesh);
+
+        const width = this.bbox.max.x - this.bbox.min.x;
+        const numColumns = Math.floor(width / 3.6);
+        this.xPlanes.clear();
+        for (let i = 0; i < numColumns; i++) {
+          // this.xPlanes.add(this.bbox.min.x + width / (numColumns + 1) * (i + 1))
+          this.xPlanes.add(width / (numColumns + 1) * (i + 1));
+        }
+        if (numColumns === 0) {
+          planeX.geometry.center();
+        } else {
+          planeX.geometry.center();
+          planeX.geometry.translate([...this.xPlanes][0], 0, 0);
+          // planeX.mesh.position.x = this.xPlanes[0];
+        }
 
         this.updateLabels();
 
@@ -207,8 +228,8 @@ class Scene extends React.Component<IProps, IState> {
     // this.scene.add(new THREE.AxisHelper(10))
 
     const model = new Model(
-      [[0, 0], [2, 0], [2, 2], [0, 2]],
-      // [[0, 0], [2, 0], [2, 2], [1, 3], [0, 2]],
+      // [[0, 0], [2, 0], [2, 2], [0, 2]],
+      [[0, 0], [2, 0], [2, 2], [1, 3], [0, 2]],
       this.props.colors.face,
       this.props.colors.faceHighlight,
       this.props.colors.faceActive
@@ -216,10 +237,10 @@ class Scene extends React.Component<IProps, IState> {
     this.active.model = model;
     this.scene.add(model.mesh);
 
-    // this.scene.add(cutLines);
+    this.scene.add(cutLines);
     // this.scene.add(planeZ.mesh);
-    // this.scene.add(planeY.mesh);
-    // this.scene.add(planeX.mesh);
+    this.scene.add(planeY.mesh);
+    this.scene.add(planeX.mesh);
 
     this.wrenModel = new WrenModel(
       wren,
@@ -287,6 +308,7 @@ class Scene extends React.Component<IProps, IState> {
 
     if (intersects.length > 0) {
       this.active.intersection = intersects[0];
+      // (this.active.model.mesh.material as any).opacity = 0;
     } else {
       this.active.intersection = undefined;
     }
@@ -396,9 +418,16 @@ class Scene extends React.Component<IProps, IState> {
     this.bbox.setFromObject(this.active.model.mesh);
     const x = Math.round((this.bbox.max.x - this.bbox.min.x) * 100);
     const y = Math.round((this.bbox.max.y - this.bbox.min.y) * 100);
+
+    this.points = [[0, 0], [x, 0], [x, y], [0, y]];
+    // this.points = this.active.model.edges.map( ([x,y]) => ([x*100, y*100]) )
+    this.points = this.active.model.geometry.vertices
+      .filter(v => v.z === 0)
+      .map(v => [v.x * 100, v.y * 100]);
+
     this.wrenModel.container.position.copy(this.bbox.min);
     this.wrenModel.update(
-      new Wren([[0, 0], [x, 0], [x, y], [0, y]]),
+      new Wren(this.points),
       this.bbox.max.z - this.bbox.min.z
     );
 

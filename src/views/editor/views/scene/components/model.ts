@@ -8,6 +8,7 @@ class Model {
   faceHighlightColor: THREE.Color;
   faceActiveColor: THREE.Color;
   edgesGeometry: THREE.EdgesGeometry;
+  edges: number[][];
   private lineSegments: THREE.LineSegments;
 
   constructor(
@@ -17,6 +18,7 @@ class Model {
     faceActiveColor,
     amount = 5
   ) {
+    this.edges = edges;
     const shape = new THREE.Shape();
     edges.forEach(([x, y], index) => {
       if (index == 0) shape.moveTo(x, y);
