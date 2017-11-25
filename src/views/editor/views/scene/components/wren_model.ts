@@ -1,6 +1,7 @@
 import Wren from "../../../../wren/lib/wren";
 import * as THREE from "three";
 import { edgeMaterial, plyMaterial, pieceExtrudeSettings } from "../materials";
+import { uniq } from "lodash";
 
 class WrenModel {
   container: THREE.Object3D;

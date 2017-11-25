@@ -110,6 +110,7 @@ class Scene extends React.Component<IProps> {
         cutLines.add(planeY.intersectionLines);
         cutLines.add(planeZ.intersectionLines);
 
+
         requestAnimationFrame(this.render3);
       });
 
@@ -309,6 +310,15 @@ class Scene extends React.Component<IProps> {
   };
 
   handleMouseUp = (event: React.MouseEvent<HTMLDivElement>) => {
+    this.bbox.setFromObject(this.active.model.mesh);
+    const x = Math.round((this.bbox.max.x - this.bbox.min.x) * 100);
+    const y = Math.round((this.bbox.max.y - this.bbox.min.y) * 100);
+    this.wrenModel.container.position.copy(this.bbox.min);
+    this.wrenModel.update(
+      new Wren([[0, 0], [x, 0], [x, y], [0, y]]),
+      this.bbox.max.z - this.bbox.min.z
+    );
+
     this.mouseDown = false;
     this.controls.enabled = true;
     this.active.clickPoint = undefined;
