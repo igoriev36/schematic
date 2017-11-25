@@ -41,6 +41,8 @@ class WrenModel {
 
     this.container = new THREE.Object3D();
     this.container.add(this.mesh);
+    this.container.castShadow = true;
+    this.container.receiveShadow = true;
   }
 
   addFin = distance => {

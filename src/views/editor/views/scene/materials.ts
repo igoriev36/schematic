@@ -20,9 +20,9 @@ export const faceMaterial = new THREE.MeshBasicMaterial({
   // polygonOffsetUnits: 100
 });
 
-export const plyMaterial = new THREE.MeshBasicMaterial({
+export const plyMaterial = new THREE.MeshLambertMaterial({
   // color: 0x303030,
-  color: "#B2A181",
+  color: Config.colors.ply,
   polygonOffset: true,
   polygonOffsetFactor: 1,
   overdraw: 0.5,

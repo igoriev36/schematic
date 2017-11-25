@@ -130,7 +130,7 @@ class Scene extends React.Component<IProps> {
     // this.scene.add(new THREE.AxisHelper(10))
 
     const model = new Model(
-      [[0, 0], [2, 0], [2, 2], [0, 2]],
+      [[0, 0], [2, 0], [2, 2], [1, 3], [0, 2]],
       this.props.colors.face,
       this.props.colors.faceHighlight,
       this.props.colors.faceActive
@@ -143,17 +143,31 @@ class Scene extends React.Component<IProps> {
     this.scene.add(planeY.mesh);
     this.scene.add(planeX.mesh);
 
-    // this.wrenModel = new WrenModel(
-    //   wren,
-    //   this.props.colors.face,
-    //   this.props.colors.faceHighlight
-    // );
-    // this.scene.add(this.wrenModel.container);
+    this.wrenModel = new WrenModel(
+      wren,
+      this.props.colors.face,
+      this.props.colors.faceHighlight
+    );
+
+    const light = new THREE.HemisphereLight(0xfafafa, 0xeeeeee);
+    this.scene.add(light);
+    const light2 = new THREE.PointLight(0xffffff);
+    light2.position.y = 3;
+    light2.position.x = 3;
+    light2.lookAt(new THREE.Vector3(0, 0, 0));
+    this.scene.add(light2);
 
     this.camera.position.x = 10;
     this.camera.position.y = 10;
     this.camera.position.z = 10;
     this.camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    const pg = new THREE.PlaneGeometry(10, 10, 1, 1);
+    pg.rotateX(Math.PI / 2);
+    const m = new THREE.ShadowMaterial({ side: THREE.DoubleSide });
+    const me = new THREE.Mesh(pg, m);
+    me.receiveShadow = true;
+    this.scene.add(me);
 
     requestAnimationFrame(this.render3);
 
@@ -295,15 +309,6 @@ class Scene extends React.Component<IProps> {
   };
 
   handleMouseUp = (event: React.MouseEvent<HTMLDivElement>) => {
-    // this.bbox.setFromObject(this.active.model.mesh);
-    // const x = Math.round((this.bbox.max.x - this.bbox.min.x) * 100);
-    // const y = Math.round((this.bbox.max.y - this.bbox.min.y) * 100);
-    // this.wrenModel.container.position.copy(this.bbox.min);
-    // this.wrenModel.update(
-    //   new Wren([[0, 0], [x, 0], [x, y], [0, y]]),
-    //   this.bbox.max.z - this.bbox.min.z
-    // );
-
     this.mouseDown = false;
     this.controls.enabled = true;
     this.active.clickPoint = undefined;
@@ -319,6 +324,18 @@ class Scene extends React.Component<IProps> {
     rendererStats.update(this.renderer);
   };
 
+  handleKeyUp = (event: React.MouseEvent<HTMLDivElement>) => {
+    this.scene.add(this.wrenModel.container);
+    this.bbox.setFromObject(this.active.model.mesh);
+    const x = Math.round((this.bbox.max.x - this.bbox.min.x) * 100);
+    const y = Math.round((this.bbox.max.y - this.bbox.min.y) * 100);
+    this.wrenModel.container.position.copy(this.bbox.min);
+    this.wrenModel.update(
+      new Wren([[0, 0], [x, 0], [x, y], [0, y]]),
+      this.bbox.max.z - this.bbox.min.z
+    );
+  };
+
   render() {
     const { width, height } = this.props;
     return (
@@ -328,6 +345,7 @@ class Scene extends React.Component<IProps> {
         onMouseMove={this.handleMouseMove}
         onMouseDown={this.handleMouseDown}
         onMouseUp={this.handleMouseUp}
+        onDoubleClick={this.handleKeyUp}
       >
         <Measurement title="width" value={100} x={20} y={30} />
         <Measurement title="height" value={220} x={20} y={60} />

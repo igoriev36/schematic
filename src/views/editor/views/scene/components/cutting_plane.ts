@@ -6,6 +6,8 @@ class CuttingPlane {
   material: THREE.Material;
   mesh: THREE.Mesh;
 
+  dragPlane: THREE.Plane = new THREE.Plane();
+
   intersectionGeometry: THREE.Geometry = new THREE.Geometry();
   intersectionPoints: THREE.Points;
   intersectionLines: THREE.LineSegments;
@@ -64,7 +66,7 @@ class CuttingPlane {
     this.geometry = new THREE.PlaneGeometry(12, 12, 1, 1);
     this.material = planeMaterial;
     this.mesh = new THREE.Mesh(this.geometry, this.material);
-    this.material.visible = true;
+    this.material.visible = false;
 
     this.intersectionPoints = new THREE.Points(
       this.intersectionGeometry,
@@ -79,6 +81,7 @@ class CuttingPlane {
       case "x":
         this.geometry.rotateY(Math.PI / 2);
         this.geometry.translate(value, 0, 0);
+        this.dragPlane.translate(new THREE.Vector3(0, 0, value));
         break;
       case "y":
         this.geometry.rotateX(Math.PI / 2);
