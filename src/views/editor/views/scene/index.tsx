@@ -119,10 +119,11 @@ class Scene extends React.Component<IProps, IState> {
   setupStreams = () => {
     this.vertices$
       .map(([vector, cloned, toAdd]) => vector.copy(cloned.add(toAdd)))
-      // .debounceTime(100)
+      .debounceTime(5)
       .subscribe(vertex => {
         this.wrenModel.hide();
         this.active.model.updateGeometry();
+
         // while (cutLines.children.length > 0) {
         //   (cutLines.children[0] as THREE.Mesh).geometry.dispose();
         //   cutLines.remove(cutLines.children[0]);
@@ -135,6 +136,10 @@ class Scene extends React.Component<IProps, IState> {
         // cutLines.add(planeY.intersectionLines);
         // cutLines.add(planeZ.intersectionLines);
 
+        this.bbox.setFromObject(this.active.model.mesh);
+
+        this.updateLabels();
+
         requestAnimationFrame(this.render3);
       });
 
@@ -145,6 +150,53 @@ class Scene extends React.Component<IProps, IState> {
         this.active.model.updateMaterials();
         requestAnimationFrame(this.render3);
       });
+  };
+
+  updateLabels = () => {
+    this.setState(prevState => {
+      let coords = get2DCoords(
+        new THREE.Vector3(
+          this.bbox.min.x + (this.bbox.max.x - this.bbox.min.x) / 2,
+          this.bbox.min.y,
+          this.bbox.max.z + 0.2
+        ),
+        this.camera
+      );
+      prevState.labels.width = {
+        x: coords.x - 25,
+        y: coords.y - 10,
+        value: (this.bbox.max.x - this.bbox.min.x).toFixed(2) + "m"
+      };
+
+      coords = get2DCoords(
+        new THREE.Vector3(
+          this.bbox.max.x + 0.1,
+          this.bbox.min.y - (this.bbox.min.y - this.bbox.max.y) / 2,
+          this.bbox.min.z - 0.05
+        ),
+        this.camera
+      );
+      prevState.labels.height = {
+        x: coords.x - 25,
+        y: coords.y - 10,
+        value: (this.bbox.max.y - this.bbox.min.y).toFixed(2) + "m"
+      };
+
+      coords = get2DCoords(
+        new THREE.Vector3(
+          this.bbox.max.x + 0.2,
+          this.bbox.min.y,
+          this.bbox.min.z + (this.bbox.max.z - this.bbox.min.z) / 2
+        ),
+        this.camera
+      );
+      prevState.labels.length = {
+        x: coords.x - 25,
+        y: coords.y - 10,
+        value: (this.bbox.max.z - this.bbox.min.z).toFixed(2) + "m"
+      };
+      return prevState;
+    });
   };
 
   componentDidMount() {
@@ -197,7 +249,10 @@ class Scene extends React.Component<IProps, IState> {
 
     this.scene.add(me);
 
-    this.controls.addEventListener("change", this.render3);
+    this.controls.addEventListener("change", event => {
+      this.updateLabels();
+      this.render3();
+    });
 
     document.body.appendChild(rendererStats.domElement);
 
@@ -280,57 +335,6 @@ class Scene extends React.Component<IProps, IState> {
     }
     // }
 
-    this.setState(prevState => {
-      const coords = get2DCoords(
-        new THREE.Vector3(
-          this.bbox.min.x + (this.bbox.max.x - this.bbox.min.x) / 2,
-          this.bbox.min.y,
-          this.bbox.max.z + 0.2
-        ),
-        this.camera
-      );
-      prevState.labels.width = {
-        x: coords.x - 25,
-        y: coords.y - 10,
-        value: (this.bbox.max.x - this.bbox.min.x).toFixed(2) + "m"
-      };
-      return prevState;
-    });
-
-    this.setState(prevState => {
-      const coords = get2DCoords(
-        new THREE.Vector3(
-          this.bbox.max.x + 0.1,
-          this.bbox.min.y - (this.bbox.min.y - this.bbox.max.y) / 2,
-          this.bbox.min.z - 0.05
-        ),
-        this.camera
-      );
-      prevState.labels.height = {
-        x: coords.x - 25,
-        y: coords.y - 10,
-        value: (this.bbox.max.y - this.bbox.min.y).toFixed(2) + "m"
-      };
-      return prevState;
-    });
-
-    this.setState(prevState => {
-      const coords = get2DCoords(
-        new THREE.Vector3(
-          this.bbox.max.x + 0.2,
-          this.bbox.min.y,
-          this.bbox.min.z + (this.bbox.max.z - this.bbox.min.z) / 2
-        ),
-        this.camera
-      );
-      prevState.labels.length = {
-        x: coords.x - 25,
-        y: coords.y - 10,
-        value: (this.bbox.max.z - this.bbox.min.z).toFixed(2) + "m"
-      };
-      return prevState;
-    });
-
     // // TODO: send a done/commit signal, so it doesn't need to debounce
   };
 
@@ -409,15 +413,7 @@ class Scene extends React.Component<IProps, IState> {
 
   handleDoubleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     this.scene.add(this.wrenModel.container);
-    this.bbox.setFromObject(this.active.model.mesh);
-    const x = Math.round((this.bbox.max.x - this.bbox.min.x) * 100);
-    const y = Math.round((this.bbox.max.y - this.bbox.min.y) * 100);
-    this.wrenModel.container.position.copy(this.bbox.min);
-    this.wrenModel.update(
-      new Wren([[0, 0], [x, 0], [x, y], [0, y]]),
-      this.bbox.max.z - this.bbox.min.z
-    );
-    requestAnimationFrame(this.render3);
+    this.handleMouseUp(event);
   };
 
   render3 = () => {

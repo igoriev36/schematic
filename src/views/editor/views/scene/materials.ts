@@ -20,7 +20,7 @@ export const faceMaterial = new THREE.MeshBasicMaterial({
   // polygonOffsetUnits: 100
 });
 
-export const plyMaterial = new THREE.MeshLambertMaterial({
+export const plyMaterial = new THREE.MeshBasicMaterial({
   // color: 0x303030,
   color: Config.colors.ply,
   polygonOffset: true,

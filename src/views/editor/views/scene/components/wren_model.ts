@@ -18,7 +18,7 @@ class WrenModel {
 
     let geometry: THREE.Geometry = this.addFin(0);
     // length
-    for (let i = 0; i < length; i++) {
+    for (let i = 0; i < length - 1.2; i += 1.2) {
       this.geometry.merge(geometry.clone().translate(0, 0, i));
     }
     this.mesh.geometry = this.geometry;

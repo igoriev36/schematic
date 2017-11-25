@@ -9,7 +9,7 @@ interface IMeasurement {
 
 class Measurement extends React.Component<IMeasurement> {
   render() {
-    const { value, x, y, title } = this.props;
+    const { value = 0, x = 0, y = 0, title = "untitled" } = this.props;
     return (
       <span title={title} style={{ left: x, top: y }} className="measurement">
         {value}

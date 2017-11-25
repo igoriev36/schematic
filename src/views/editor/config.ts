@@ -3,7 +3,7 @@ export default {
     bg: 0xeeeeee,
     // edge: 0x888888,
     // edge: 0x999999,
-    edge: 0x111111,
+    edge: 0x777777,
     line: 0xffff00,
     face: 0x333333,
     faceHighlight: 0xaaaaaa,

@@ -15,7 +15,7 @@ class Stats extends React.Component {
         <table>
           <tbody>
             {rows.map(r => (
-              <tr>
+              <tr key={r[0]}>
                 <th>{r[0]}</th>
                 <td>{r[1]}</td>
               </tr>

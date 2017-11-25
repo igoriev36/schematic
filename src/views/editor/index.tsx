@@ -16,9 +16,9 @@ class Editor extends React.Component<IProps> {
     return (
       <div id="editor">
         <Scene colors={Config.colors} {...this.props} />,
-        <Controls />,
+        {/* <Controls />, */}
         <Stats />,
-        <StatusBar helpText="This is help text" />
+        {/* <StatusBar helpText="This is help text" /> */}
       </div>
     );
   }
