@@ -35,7 +35,9 @@ interface Line {
 interface IDimensions {
   width?: number;
   height?: number;
+  length?: number;
   footprint?: number;
+  numSheets?: number;
 }
 
 const maxSpan = 360;
@@ -63,6 +65,7 @@ class Wren {
 
     this.dimensions.width = pointBounds.maxX - pointBounds.minX;
     this.dimensions.height = pointBounds.maxY - pointBounds.minY;
+    this.dimensions.length = Math.random();
 
     const numColumns = Math.floor(this.dimensions.width / maxSpan);
     for (let i = 0; i < numColumns; i++) {
@@ -72,6 +75,7 @@ class Wren {
     }
 
     this.dimensions.footprint = this.dimensions.width * this.dimensions.height;
+    this.dimensions.numSheets = Math.random();
 
     // console.log({width, height})
 
@@ -234,19 +238,6 @@ class Wren {
       );
     }
   };
-
-  // private calculateSides = points => {
-  //   const index = safeIndex(points.length);
-  //   for (let i = 0; i < points.length; i++) {
-  //     this.sides.push(
-  //       new Side(points[i], points[index(i + 1)], {
-  //         x: points[index(i + 1)][0],
-  //         y: points[index(i + 1)][1],
-  //         z: 0
-  //       }, { y: Math.PI / 2 })
-  //     )
-  //   }
-  // };
 
   private calculateVanillaWalls = (name, points) => {
     const index = safeIndex(points.length);

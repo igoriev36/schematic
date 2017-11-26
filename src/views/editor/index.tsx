@@ -12,12 +12,24 @@ interface IProps {
 }
 
 class Editor extends React.Component<IProps> {
+  state = {
+    dimensions: {}
+  };
+
+  updateDimensions = dimensions => {
+    this.setState({ dimensions });
+  };
+
   render() {
     return (
       <div id="editor">
-        <Scene colors={Config.colors} {...this.props} />,
+        <Scene
+          colors={Config.colors}
+          {...this.props}
+          updateDimensions={this.updateDimensions}
+        />,
         {/* <Controls />, */}
-        <Stats />,
+        <Stats dimensions={this.state.dimensions} />,
         {/* <StatusBar helpText="This is help text" /> */}
       </div>
     );

@@ -32,6 +32,7 @@ interface IProps {
   height: number;
   devicePixelRatio: number;
   colors: any;
+  updateDimensions: any;
 }
 
 interface IActive {
@@ -430,6 +431,7 @@ class Scene extends React.Component<IProps, IState> {
       new Wren(this.points),
       this.bbox.max.z - this.bbox.min.z
     );
+    this.props.updateDimensions(this.wrenModel.wren.dimensions);
 
     this.mouseDown = false;
     this.controls.enabled = true;
