@@ -19,7 +19,8 @@ module.exports = {
   devServer: {
     contentBase: path.resolve(__dirname, "./public"),
     hot: false,
-    inline: false
+    inline: false,
+    host: '0.0.0.0'
   },
   plugins: [
     new webpack.ProvidePlugin({

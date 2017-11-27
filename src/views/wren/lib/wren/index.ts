@@ -70,6 +70,7 @@ class Wren {
   polygons: Point[][];
 
   constructor(points) {
+    console.log("WREN");
     // offset with 0 to normalize direction of points (clockwise or counter-clockwise)
     this.points = offset(points, { DELTA: 0 });
     this.originalPoints = this.points.slice(0);

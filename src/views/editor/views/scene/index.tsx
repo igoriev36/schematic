@@ -125,7 +125,7 @@ class Scene extends React.Component<IProps, IState> {
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setClearColor(colors.bg);
     this.renderer.setSize(width, height);
-    this.renderer.setPixelRatio(devicePixelRatio);
+    // this.renderer.setPixelRatio(devicePixelRatio);
     this.controls = SceneControls(this.camera, this.renderer.domElement);
   };
 
@@ -433,8 +433,15 @@ class Scene extends React.Component<IProps, IState> {
   };
 
   handleMouseUp = (event: React.MouseEvent<HTMLDivElement>) => {
+    setTimeout(() => {
+      this.wrenModel.show();
+      requestAnimationFrame(this.render3);
+    }, 10);
+
     this.wrenModel.show();
-    this.recalculateModel();
+    if (this.active.clickPoint) {
+      this.recalculateModel();
+    }
 
     this.mouseDown = false;
     this.controls.enabled = true;
@@ -447,7 +454,6 @@ class Scene extends React.Component<IProps, IState> {
 
   handleRightClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.preventDefault();
-
     if (!this.active.intersection) return;
 
     let newPos;
@@ -485,6 +491,8 @@ class Scene extends React.Component<IProps, IState> {
       this.active.model.geometry.vertices[0].clone(),
       new THREE.Vector3(0, 0, 0)
     ]);
+
+    requestAnimationFrame(this.render3);
   };
 
   recalculateModel = () => {
