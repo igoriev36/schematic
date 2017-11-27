@@ -450,11 +450,11 @@ class Scene extends React.Component<IProps, IState> {
     if (this.active.roofType === Roof.FLAT) {
       this.active.roofType = Roof.PITCH;
       this.active.model.geometry.vertices
-        .filter(v => Math.abs(v.y - this.bbox.max.y) < 0.01)
+        .filter(v => Math.abs(v.y - this.bbox.max.y) < 0.001)
         .filter(
           v =>
-            Math.abs(v.x - this.bbox.min.x) > 0.01 &&
-            Math.abs(v.x - this.bbox.max.x) > 0.01
+            Math.abs(v.x - this.bbox.min.x) > 0.001 &&
+            Math.abs(v.x - this.bbox.max.x) > 0.001
         )
         .map(v => {
           v.copy(
