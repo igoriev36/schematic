@@ -23,12 +23,12 @@ class Editor extends React.Component<IProps> {
   };
 
   toggleModel = () => {
-    console.log({ toggleModel: this.state.showModel });
     this.setState({ showModel: !this.state.showModel });
   };
 
   render() {
     const { showModel } = this.state;
+    const stats = showModel ? <Stats dimensions={this.state.dimensions} /> : "";
     return (
       <div id="editor">
         <Scene
@@ -36,10 +36,10 @@ class Editor extends React.Component<IProps> {
           {...this.props}
           showModel={showModel}
           updateDimensions={this.updateDimensions}
-        />,
+        />
+        {stats}
+        <Toggler showModel={showModel} toggleModel={this.toggleModel} />
         {/* <Controls />, */}
-        <Stats dimensions={this.state.dimensions} />,
-        <Toggler showModel={showModel} toggleModel={this.toggleModel} />,
         {/* <StatusBar helpText="This is help text" /> */}
       </div>
     );

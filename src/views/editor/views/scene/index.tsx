@@ -42,11 +42,19 @@ interface IActive {
   plane: THREE.Plane;
   planeIntersection: THREE.Vector3;
   normal: THREE.Vector3;
+  roofType: any;
 }
 
 interface IState {
   labels: any;
 }
+
+const Roof = {
+  FLAT: "FLAT",
+  PITCH: "PITCH",
+  LEFT_LEANING: "LEFT_LEANING",
+  RIGHT_LEANING: "RIGHT_LEANING"
+};
 
 class Scene extends React.Component<IProps, IState> {
   state = {
@@ -77,7 +85,8 @@ class Scene extends React.Component<IProps, IState> {
     originalVertices: undefined,
     normal: undefined,
     plane: new THREE.Plane(),
-    planeIntersection: new THREE.Vector3()
+    planeIntersection: new THREE.Vector3(),
+    roofType: Roof.FLAT
   };
 
   private bbox: THREE.Box3 = new THREE.Box3();
@@ -126,13 +135,16 @@ class Scene extends React.Component<IProps, IState> {
       .debounceTime(5)
       .subscribe(vertex => {
         this.wrenModel.hide();
-
-        while (cutLines.children.length > 0) {
-          (cutLines.children[0] as THREE.Mesh).geometry.dispose();
-          cutLines.remove(cutLines.children[0]);
-        }
-
         this.bbox.setFromObject(this.active.model.mesh);
+        this.active.model.updateGeometry();
+
+        cutLines.visible = false;
+        while (cutLines.children.length > 0) {
+          const c = cutLines.children.pop();
+          (c as THREE.Mesh).geometry.dispose();
+          cutLines.remove(c);
+        }
+        cutLines.visible = true;
 
         const width = this.bbox.max.x - this.bbox.min.x;
         const numColumns = Math.floor(width / 3.6);
@@ -143,7 +155,7 @@ class Scene extends React.Component<IProps, IState> {
         for (let i = 0; i < xPlanes.length; i++) {
           xPlanes[i].geometry.center();
           const v = [...this.xPlanes][i] || 0;
-          xPlanes[i].geometry.translate(v, 0, 0);
+          xPlanes[i].geometry.translate(this.bbox.min.x + v, 0, 0);
           if (v !== 0) {
             xPlanes[i].intersect(this.active.model);
             cutLines.add(xPlanes[i].intersectionLines);
@@ -151,7 +163,7 @@ class Scene extends React.Component<IProps, IState> {
         }
 
         const height = this.bbox.max.y - this.bbox.min.y;
-        const numRows = Math.floor(height / 4);
+        const numRows = Math.floor(height / 5);
         this.yPlanes.clear();
         for (let i = 0; i < numRows; i++) {
           this.yPlanes.add(height / (numRows + 1) * (i + 1));
@@ -170,7 +182,6 @@ class Scene extends React.Component<IProps, IState> {
         // this.controls.update()
 
         this.updateLabels();
-        this.active.model.updateGeometry();
         requestAnimationFrame(this.render3);
       });
 
@@ -239,7 +250,7 @@ class Scene extends React.Component<IProps, IState> {
 
     const model = new Model(
       // [[0, 0], [2, 0], [2, 2], [0, 2]],
-      [[0, 0], [2, 0], [2, 2], /*[1,2],*/ [0, 2]],
+      [[0, 0], [2, 0], [2, 2], [1, 2], [0, 2]],
       this.props.colors.face,
       this.props.colors.faceHighlight,
       this.props.colors.faceActive
@@ -267,7 +278,7 @@ class Scene extends React.Component<IProps, IState> {
     this.scene.add(light2);
 
     this.camera.position.x = 10;
-    this.camera.position.y = 20;
+    this.camera.position.y = 15;
     this.camera.position.z = 15;
     this.camera.lookAt(new THREE.Vector3(1, 2, 1));
 
@@ -282,7 +293,7 @@ class Scene extends React.Component<IProps, IState> {
 
     this.controls.addEventListener("change", event => {
       this.updateLabels();
-      this.render3();
+      requestAnimationFrame(this.render3);
     });
 
     // document.body.appendChild(rendererStats.domElement);
@@ -295,11 +306,7 @@ class Scene extends React.Component<IProps, IState> {
     this.vertices$.unsubscribe();
   }
 
-  handleMouseMove = (
-    event:
-      | React.MouseEvent<HTMLDivElement>
-      | { clientX: number; clientY: number }
-  ) => {
+  handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     const [x, y] = getPosition(
       event.clientX,
       event.clientY,
@@ -308,13 +315,6 @@ class Scene extends React.Component<IProps, IState> {
     );
     this.raycaster.setFromCamera({ x, y }, this.camera);
 
-    // const cutLineIntersects = this.raycaster.intersectObject(
-    //   planeX.mesh,
-    //   false
-    // );
-    // if (true || cutLineIntersects.length > 0) {
-
-    // } else {
     const intersects = this.raycaster.intersectObject(
       this.active.model.mesh,
       false
@@ -369,57 +369,60 @@ class Scene extends React.Component<IProps, IState> {
         }
       });
     }
-    // }
 
-    // // TODO: send a done/commit signal, so it doesn't need to debounce
+    // TODO: send a done/commit signal, so it doesn't need to debounce
   };
 
   handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
     this.mouseDown = true;
     if (this.active.intersection) {
       this.active.clickPoint = this.active.intersection.point;
-
-      this.active.normal = this.active.intersection.face.normal
-        .clone()
-        .normalize();
-
-      if (
-        this.active.normal.x + this.active.normal.y + this.active.normal.z <
-        0
-      ) {
-        this.active.normal.negate();
-      }
-
       this.controls.enabled = false;
 
-      this.active.vertices = ((this.active.intersection.object as THREE.Mesh)
-        .geometry as THREE.Geometry).faces
-        .filter(f =>
-          nearlyEqual(f.normal, this.active.intersection.face.normal)
-        )
-        .reduce((set, f) => {
-          if (!f.color.equals(this.active.model.faceActiveColor)) {
-            this.faceColor$.next([f, this.props.colors.faceActive]);
-          }
-          set.add(this.active.model.geometry.vertices[f.a]);
-          set.add(this.active.model.geometry.vertices[f.b]);
-          set.add(this.active.model.geometry.vertices[f.c]);
-          return set;
-        }, new Set());
-
-      this.active.originalVertices = [...this.active.vertices].map(v =>
-        v.clone()
-      );
-
-      this.debugPlane.position.copy(this.active.intersection.point);
-      this.debugPlane.lookAt(
-        this.active.intersection.point
+      if (
+        Math.abs(this.active.intersection.face.normal.y - 0) < 0.0001 ||
+        Math.abs(this.active.intersection.face.normal.y - 1) < 0.0001
+      ) {
+        this.active.normal = this.active.intersection.face.normal
           .clone()
-          .add(this.active.intersection.face.normal)
-      );
+          .normalize();
 
-      const [a, b, c] = this.debugPlane.userData.pts();
-      this.active.plane.setFromCoplanarPoints(a, b, c);
+        if (
+          this.active.normal.x + this.active.normal.y + this.active.normal.z <
+          0
+        ) {
+          this.active.normal.negate();
+        }
+
+        this.active.vertices = ((this.active.intersection.object as THREE.Mesh)
+          .geometry as THREE.Geometry).faces
+          .filter(f =>
+            nearlyEqual(f.normal, this.active.intersection.face.normal)
+          )
+          .reduce((set, f) => {
+            if (!f.color.equals(this.active.model.faceActiveColor)) {
+              this.faceColor$.next([f, this.props.colors.faceActive]);
+            }
+            set.add(this.active.model.geometry.vertices[f.a]);
+            set.add(this.active.model.geometry.vertices[f.b]);
+            set.add(this.active.model.geometry.vertices[f.c]);
+            return set;
+          }, new Set());
+
+        this.active.originalVertices = [...this.active.vertices].map(v =>
+          v.clone()
+        );
+
+        this.debugPlane.position.copy(this.active.intersection.point);
+        this.debugPlane.lookAt(
+          this.active.intersection.point
+            .clone()
+            .add(this.active.intersection.face.normal)
+        );
+
+        const [a, b, c] = this.debugPlane.userData.pts();
+        this.active.plane.setFromCoplanarPoints(a, b, c);
+      }
 
       this.handleMouseMove(event);
     }
@@ -440,13 +443,44 @@ class Scene extends React.Component<IProps, IState> {
 
   handleRightClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.preventDefault();
-    if (this.active.normal.y > 0) {
-      console.log(this.active.normal.y, "ROOF");
+
+    if (!this.active.intersection) return;
+
+    let newPos;
+    if (this.active.roofType === Roof.FLAT) {
+      this.active.roofType = Roof.PITCH;
+      this.active.model.geometry.vertices
+        .filter(v => Math.abs(v.y - this.bbox.max.y) < 0.01)
+        .filter(
+          v =>
+            Math.abs(v.x - this.bbox.min.x) > 0.01 &&
+            Math.abs(v.x - this.bbox.max.x) > 0.01
+        )
+        .map(v => {
+          v.copy(
+            new THREE.Vector3(
+              this.bbox.min.x +
+                (this.bbox.max.x - this.bbox.min.x) / 2 -
+                0.00001,
+              v.y + 1.1,
+              v.z
+            )
+          );
+        });
     } else {
-      console.log("NOT ROOF");
+      this.active.roofType = Roof.FLAT;
+      // newPos = v => new THREE.Vector3(v.x, v.y - 1, v.z)
+
+      const vs = this.active.model.geometry.vertices.filter(v => v.y > 0.1);
+      const newY = Math.min(...vs.map(v => v.y));
+      vs.map(v => v.setY(newY));
     }
-    // console.log(event, this.active.normal)
-    // this.points
+
+    this.vertices$.next([
+      this.active.model.geometry.vertices[0],
+      this.active.model.geometry.vertices[0].clone(),
+      new THREE.Vector3(0, 0, 0)
+    ]);
   };
 
   recalculateModel = () => {
@@ -455,23 +489,29 @@ class Scene extends React.Component<IProps, IState> {
     const y = Math.round((this.bbox.max.y - this.bbox.min.y) * 100);
     // this.points = [[0, 0], [x, 0], [x, y], [0, y]];
     this.points = this.active.model.geometry.vertices
-      .filter(v => v.z === 0)
+      .filter(v => Math.abs(v.z - this.bbox.max.z) < 0.01)
       .map(v => [v.x * 100, v.y * 100]);
     this.wrenModel.container.position.copy(this.bbox.min);
     this.wrenModel.update(
       new Wren(this.points),
       this.bbox.max.z - this.bbox.min.z
     );
+    this.wrenModel.mesh.position.x = -this.bbox.min.x;
     this.props.updateDimensions(this.wrenModel.wren.dimensions);
   };
 
-  componentDidUpdate(props) {
-    if (props.showModel) {
-      this.scene.add(this.wrenModel.container);
-      // this.wrenModel.show();
-      // this.handleMouseMove({clientX: 0, clientY: 0})
-    } else {
-      this.scene.remove(this.wrenModel.container);
+  componentDidUpdate(prevProps) {
+    if (this.props.showModel !== prevProps.showModel) {
+      if (prevProps.showModel) {
+        // this.active.model.mesh.visible = true;
+        this.scene.remove(this.wrenModel.container);
+      } else {
+        // this.active.model.mesh.visible = false;
+        this.scene.add(this.wrenModel.container);
+        this.wrenModel.show();
+        this.recalculateModel();
+      }
+      requestAnimationFrame(this.render3);
     }
   }
 
