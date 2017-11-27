@@ -66,3 +66,11 @@ body {
 th {
   text-align: right;
 }
+
+#toggler {
+  display: inline-block;
+  padding: 5px;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+}

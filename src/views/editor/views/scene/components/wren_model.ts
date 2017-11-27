@@ -21,6 +21,32 @@ class WrenModel {
     for (let i = 0; i < length - 1.2; i += 1.2) {
       this.geometry.merge(geometry.clone().translate(0, 0, i));
     }
+
+    const shape = new THREE.Shape();
+    wren.outerPoints
+      .map(([x, y]) => [x / 100, y / 100])
+      .forEach(([x, y], index) => {
+        if (index == 0) shape.moveTo(x, y);
+        else shape.lineTo(x, y);
+      });
+
+    const hole = new THREE.Path();
+    wren.innerPoints
+      .map(([x, y]) => [x / 100, y / 100])
+      .forEach(([x, y], index) => {
+        if (index == 0) hole.moveTo(x, y);
+        else hole.lineTo(x, y);
+      });
+    shape.holes.push(hole);
+
+    const g = new THREE.ExtrudeGeometry(shape, {
+      ...pieceExtrudeSettings,
+      amount: Math.floor(length / 1.2) * 1.2
+    });
+    g.translate(0, 0, -0.1);
+    // const mesh = new THREE.Mesh(g);
+    this.geometry.merge(g);
+
     this.mesh.geometry = this.geometry;
 
     this.edgesGeometry.dispose();
@@ -50,9 +76,11 @@ class WrenModel {
   addFin = distance => {
     const geometry = new THREE.Geometry();
 
-    this.addPieces(geometry, "finPieces", distance * 1.2 + 0.01);
-    this.addPieces(geometry, "reinforcers", distance * 1.2 + 0.01 + 0.0036);
-    this.addPieces(geometry, "finPieces", distance * 1.2 + 1 + 0.01);
+    this.addPieces(geometry, "finPieces", distance * 1.2);
+
+    // this.addPieces(geometry, "reinforcers", distance * 1.2 + 0.018);
+
+    this.addPieces(geometry, "finPieces", distance * 1.2 + 1);
     this.addVanillaWalls("vanillaInnerWalls", geometry, distance);
     this.addVanillaWalls("vanillaOuterWalls", geometry, distance);
 

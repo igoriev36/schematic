@@ -16,7 +16,7 @@ class Model {
     faceColor,
     faceHighlightColor,
     faceActiveColor,
-    amount = 5
+    amount = 2.4
   ) {
     this.edges = edges;
     const shape = new THREE.Shape();

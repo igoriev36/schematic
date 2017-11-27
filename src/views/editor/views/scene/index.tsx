@@ -9,7 +9,7 @@ import Model from "./components/model";
 import SceneControls from "./components/scene_controls";
 import Wren from "../../../wren/lib/wren";
 import WrenModel from "./components/wren_model";
-import rendererStats from "./components/renderer_stats";
+// import rendererStats from "./components/renderer_stats";
 import { Event } from "three";
 import { getPosition, get2DCoords } from "./libs/utils";
 import { lineMaterial, pointsMaterial, cutLineMaterial } from "./materials";
@@ -17,13 +17,10 @@ import { nearlyEqual } from "./libs/vector";
 // import WrenWorker from "worker-loader!./components/wren_worker";
 // const worker = new WrenWorker();
 
-const planeX = new CuttingPlane(1, "x");
-const planeY = new CuttingPlane(1, "y");
+const xPlanes = [new CuttingPlane(0, "x"), new CuttingPlane(0, "x")];
+const yPlanes = [new CuttingPlane(0, "y"), new CuttingPlane(0, "y")];
 // const planeZ = new CuttingPlane(2, "z");
 const cutLines = new THREE.Object3D();
-
-const heightEl = document.querySelector("span.measurement") as HTMLSpanElement;
-console.log({ heightEl });
 
 const wren = new Wren([]);
 
@@ -33,6 +30,7 @@ interface IProps {
   devicePixelRatio: number;
   colors: any;
   updateDimensions: any;
+  showModel: boolean;
 }
 
 interface IActive {
@@ -55,17 +53,17 @@ class Scene extends React.Component<IProps, IState> {
     labels: {
       width: {
         value: 100,
-        x: 20,
+        x: -100,
         y: 30
       },
       length: {
         value: 220,
-        x: 20,
+        x: -100,
         y: 60
       },
       height: {
         value: 220,
-        x: 20,
+        x: -100,
         y: 90
       }
     }
@@ -99,6 +97,7 @@ class Scene extends React.Component<IProps, IState> {
   private points = [];
 
   private xPlanes = new Set();
+  private yPlanes = new Set();
 
   constructor(props) {
     super(props);
@@ -133,32 +132,49 @@ class Scene extends React.Component<IProps, IState> {
           (cutLines.children[0] as THREE.Mesh).geometry.dispose();
           cutLines.remove(cutLines.children[0]);
         }
-        planeX.intersect(this.active.model);
-        planeY.intersect(this.active.model);
-        // planeZ.intersect(this.active.model);
 
-        // cutLines.add(planeX.intersectionPoints);
-        // cutLines.add(planeY.intersectionPoints);
-        cutLines.add(planeX.intersectionLines);
-        cutLines.add(planeY.intersectionLines);
-        // cutLines.add(planeZ.intersectionLines);
+        xPlanes.forEach(x => {
+          x.intersect(this.active.model);
+          cutLines.add(x.intersectionLines);
+          // cutLines.add(x.intersectionPoints);
+        });
+
+        yPlanes.forEach(y => {
+          console.log(y.geometry.vertices);
+          y.intersect(this.active.model);
+          cutLines.add(y.intersectionLines);
+          // cutLines.add(y.intersectionPoints);
+        });
 
         this.bbox.setFromObject(this.active.model.mesh);
 
         const width = this.bbox.max.x - this.bbox.min.x;
         const numColumns = Math.floor(width / 3.6);
+
         this.xPlanes.clear();
+
         for (let i = 0; i < numColumns; i++) {
-          // this.xPlanes.add(this.bbox.min.x + width / (numColumns + 1) * (i + 1))
           this.xPlanes.add(width / (numColumns + 1) * (i + 1));
         }
-        if (numColumns === 0) {
-          planeX.geometry.center();
-        } else {
-          planeX.geometry.center();
-          planeX.geometry.translate([...this.xPlanes][0], 0, 0);
-          // planeX.mesh.position.x = this.xPlanes[0];
+        for (let i = 0; i < xPlanes.length; i++) {
+          xPlanes[i].geometry.center();
+          xPlanes[i].geometry.translate([...this.xPlanes][i] || 0, 0, 0);
         }
+
+        const height = this.bbox.max.y - this.bbox.min.y;
+        const numRows = Math.floor(height / 4);
+        this.yPlanes.clear();
+
+        for (let i = 0; i < numRows; i++) {
+          this.yPlanes.add(height / (numRows + 1) * (i + 1));
+        }
+        for (let i = 0; i < yPlanes.length; i++) {
+          yPlanes[i].geometry.center();
+          yPlanes[i].geometry.translate(0, [...this.yPlanes][i] || 0, 0);
+        }
+
+        // this.controls.target.copy(new THREE.Vector3(width/2,2,(this.bbox.max.z - this.bbox.min.z)/2))
+        // this.controls.update()
 
         this.updateLabels();
 
@@ -230,7 +246,7 @@ class Scene extends React.Component<IProps, IState> {
 
     const model = new Model(
       // [[0, 0], [2, 0], [2, 2], [0, 2]],
-      [[0, 0], [2, 0], [2, 2], [1, 3], [0, 2]],
+      [[0, 0], [2, 0], [2, 2], /*[1,2],*/ [0, 2]],
       this.props.colors.face,
       this.props.colors.faceHighlight,
       this.props.colors.faceActive
@@ -240,8 +256,8 @@ class Scene extends React.Component<IProps, IState> {
 
     this.scene.add(cutLines);
     // this.scene.add(planeZ.mesh);
-    this.scene.add(planeY.mesh);
-    this.scene.add(planeX.mesh);
+    xPlanes.forEach(xPlane => this.scene.add(xPlane.mesh));
+    yPlanes.forEach(yPlane => this.scene.add(yPlane.mesh));
 
     this.wrenModel = new WrenModel(
       wren,
@@ -258,9 +274,9 @@ class Scene extends React.Component<IProps, IState> {
     this.scene.add(light2);
 
     this.camera.position.x = 10;
-    this.camera.position.y = 10;
-    this.camera.position.z = 10;
-    this.camera.lookAt(new THREE.Vector3(0, 0, 0));
+    this.camera.position.y = 20;
+    this.camera.position.z = 15;
+    this.camera.lookAt(new THREE.Vector3(1, 2, 1));
 
     const m = new THREE.ShadowMaterial({ side: THREE.DoubleSide });
     const pg = new THREE.PlaneGeometry(10, 10, 1, 1);
@@ -276,7 +292,7 @@ class Scene extends React.Component<IProps, IState> {
       this.render3();
     });
 
-    document.body.appendChild(rendererStats.domElement);
+    // document.body.appendChild(rendererStats.domElement);
 
     requestAnimationFrame(this.render3);
   }
@@ -286,7 +302,11 @@ class Scene extends React.Component<IProps, IState> {
     this.vertices$.unsubscribe();
   }
 
-  handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+  handleMouseMove = (
+    event:
+      | React.MouseEvent<HTMLDivElement>
+      | { clientX: number; clientY: number }
+  ) => {
     const [x, y] = getPosition(
       event.clientX,
       event.clientY,
@@ -366,20 +386,17 @@ class Scene extends React.Component<IProps, IState> {
     if (this.active.intersection) {
       this.active.clickPoint = this.active.intersection.point;
 
-      //   this.activeNormal =
-      //     normal.x + normal.y + normal.z < 0
-      //       ? normal.clone().negate()
-      //       : normal.clone();
-
       this.active.normal = this.active.intersection.face.normal
         .clone()
         .normalize();
+
       if (
         this.active.normal.x + this.active.normal.y + this.active.normal.z <
         0
-      )
+      ) {
         this.active.normal.negate();
-      // console.log(this.active.normal)
+      }
+
       this.controls.enabled = false;
 
       this.active.vertices = ((this.active.intersection.object as THREE.Mesh)
@@ -396,6 +413,7 @@ class Scene extends React.Component<IProps, IState> {
           set.add(this.active.model.geometry.vertices[f.c]);
           return set;
         }, new Set());
+
       this.active.originalVertices = [...this.active.vertices].map(v =>
         v.clone()
       );
@@ -416,22 +434,7 @@ class Scene extends React.Component<IProps, IState> {
 
   handleMouseUp = (event: React.MouseEvent<HTMLDivElement>) => {
     this.wrenModel.show();
-    this.bbox.setFromObject(this.active.model.mesh);
-    const x = Math.round((this.bbox.max.x - this.bbox.min.x) * 100);
-    const y = Math.round((this.bbox.max.y - this.bbox.min.y) * 100);
-
-    this.points = [[0, 0], [x, 0], [x, y], [0, y]];
-    // this.points = this.active.model.edges.map( ([x,y]) => ([x*100, y*100]) )
-    this.points = this.active.model.geometry.vertices
-      .filter(v => v.z === 0)
-      .map(v => [v.x * 100, v.y * 100]);
-
-    this.wrenModel.container.position.copy(this.bbox.min);
-    this.wrenModel.update(
-      new Wren(this.points),
-      this.bbox.max.z - this.bbox.min.z
-    );
-    this.props.updateDimensions(this.wrenModel.wren.dimensions);
+    this.recalculateModel();
 
     this.mouseDown = false;
     this.controls.enabled = true;
@@ -442,16 +445,48 @@ class Scene extends React.Component<IProps, IState> {
     requestAnimationFrame(this.render3);
   };
 
-  handleDoubleClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    this.scene.add(this.wrenModel.container);
-    this.handleMouseUp(event);
+  handleRightClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    if (this.active.normal.y > 0) {
+      console.log(this.active.normal.y, "ROOF");
+    } else {
+      console.log("NOT ROOF");
+    }
+    // console.log(event, this.active.normal)
+    // this.points
   };
+
+  recalculateModel = () => {
+    this.bbox.setFromObject(this.active.model.mesh);
+    const x = Math.round((this.bbox.max.x - this.bbox.min.x) * 100);
+    const y = Math.round((this.bbox.max.y - this.bbox.min.y) * 100);
+    // this.points = [[0, 0], [x, 0], [x, y], [0, y]];
+    this.points = this.active.model.geometry.vertices
+      .filter(v => v.z === 0)
+      .map(v => [v.x * 100, v.y * 100]);
+    this.wrenModel.container.position.copy(this.bbox.min);
+    this.wrenModel.update(
+      new Wren(this.points),
+      this.bbox.max.z - this.bbox.min.z
+    );
+    this.props.updateDimensions(this.wrenModel.wren.dimensions);
+  };
+
+  componentDidUpdate(props) {
+    if (props.showModel) {
+      this.scene.add(this.wrenModel.container);
+      // this.wrenModel.show();
+      // this.handleMouseMove({clientX: 0, clientY: 0})
+    } else {
+      this.scene.remove(this.wrenModel.container);
+    }
+  }
 
   render3 = () => {
     this.renderer.render(this.scene, this.camera);
     // requestAnimationFrame(this.render3);
     // TODO: don't call this on every render iteration
-    rendererStats.update(this.renderer);
+    // rendererStats.update(this.renderer);
   };
 
   render() {
@@ -464,7 +499,7 @@ class Scene extends React.Component<IProps, IState> {
         onMouseMove={this.handleMouseMove}
         onMouseDown={this.handleMouseDown}
         onMouseUp={this.handleMouseUp}
-        onDoubleClick={this.handleDoubleClick}
+        onContextMenu={this.handleRightClick}
       >
         <Measurement
           title="width"

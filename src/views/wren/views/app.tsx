@@ -9,8 +9,8 @@ import Stats from "./stats";
 // prettier-ignore
 const points: ISVGProps["points"] = [
   [100, 400],
-  [300, 400],
-  [300, 200],
+  [500, 400],
+  [500, 200],
   [220, 50],
   [100, 100],
 ];
@@ -51,7 +51,8 @@ class App extends React.Component<{}, IState> {
   setActivePoint = id => e => {
     e.stopPropagation();
     this.setState(prevState => {
-      // prevState.action = [this.actions.DRAGGING_POINTS, [id]];
+      prevState.action[0] = this.actions.DRAGGING_POINTS;
+      prevState.action[1] = [id];
       return prevState;
     });
   };
@@ -84,7 +85,7 @@ class App extends React.Component<{}, IState> {
           setPointPosition={this.setPointPosition}
         />
         <Layers layers={this.state.layers} toggleLayer={this.toggleLayer} />
-        <Stats dimensions={{ footprint: 10, width: 20, height: 20 }} />
+        {/* <Stats dimensions={{ footprint: 10, width: 20, height: 20 }} /> */}
       </div>
     );
   }

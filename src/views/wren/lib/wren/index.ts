@@ -92,9 +92,6 @@ class Wren {
     this.calculateReinforcers();
     this.calculateFinPieces();
 
-    // this.calculateWalls("innerWalls", this.innerPoints, -120);
-    // this.calculateWalls("outerWalls", this.outerPoints, 120);
-
     // this.calculateSides(this.outerPoints);
     this.calculateVanillaWalls(
       "vanillaInnerWalls",
@@ -227,21 +224,14 @@ class Wren {
     // console.log(this.finPieces);
   };
 
-  private calculateWalls = (name, points, distance) => {
-    const index = safeIndex(points.length);
-    for (let i = 0; i < points.length; i++) {
-      this[name].push(
-        new Wall(distance, points[i], this.lines[i].angle, [
-          points[i],
-          points[index(i + 1)]
-        ]).points
-      );
-    }
-  };
-
   private calculateVanillaWalls = (name, points) => {
     const index = safeIndex(points.length);
     for (let i = 0; i < points.length; i++) {
+      // const sortedPoints = [
+      //   points[i],
+      //   points[index(i + 1)]
+      // ].sort((a,b) => a[1] - b[1]);
+      // this[name].push(new VanillaWall(120, sortedPoints[0], sortedPoints[1]));
       this[name].push(new VanillaWall(120, points[i], points[index(i + 1)]));
     }
   };

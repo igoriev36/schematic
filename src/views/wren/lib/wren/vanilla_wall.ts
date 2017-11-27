@@ -23,12 +23,45 @@ const pieces = (_totalLength, maxPieceLength) => {
 };
 
 // prettier-ignore
-const wall = (wallWidth:number, wallHeight:number):Point[] => [
-  [0,0],
-  [wallHeight,0],
-  [wallHeight,wallWidth],
-  [0,wallWidth]
-]
+// const wall = (wallWidth:number, wallHeight:number):Point[] => [
+//   [0,0],
+//     [wallHeight,0],
+//     [wallHeight, 10],
+//     [wallHeight-10, 10],
+//     [wallHeight-10, 20],
+//     [wallHeight, 20],
+//   [wallHeight,wallWidth],
+//   [0,wallWidth]
+// ]
+
+// prettier-ignore
+const wall = (wallWidth:number, wallHeight:number, i, total):Point[] => {
+  let p = []
+
+  // if (i < total - 1) {
+  //   for (let i = 0; i < 12; i+=2) {
+  //     p.push([wallHeight, i*10])
+  //     p.push([wallHeight, i*10+10])
+  //     p.push([wallHeight-10, i*10+10])
+  //     p.push([wallHeight-10, i*10+20])
+  //     p.push([wallHeight, i*10+20])
+  //   }
+  // } else {
+    p.push([wallHeight, 0])
+  // }
+
+  p.push([wallHeight,wallWidth])
+
+  // if (i > 0) {
+  //   p.push([-10,wallWidth])
+  //   p.push([-10,0])
+  // } else {
+    p.push([0,wallWidth])
+    p.push([0,0])
+  // }
+
+  return (p as Point[])
+}
 
 interface Piece {
   pts: Point[];
@@ -45,10 +78,12 @@ class VanillaWall {
     const getPos = pointOnLine(start, end);
     const pieceLengths = pieces(length, maxPieceLength);
 
-    for (let i = 0; i < pieceLengths.length; i++) {
+    const total = pieceLengths.length;
+
+    for (let i = 0; i < total; i++) {
       this.pieces.push({
         pos: getPos(maxPieceLength * i),
-        pts: wall(120, pieceLengths[i]),
+        pts: wall(120, pieceLengths[i], i, total),
         angle: _angle
       });
     }
