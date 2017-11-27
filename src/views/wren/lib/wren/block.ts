@@ -67,13 +67,13 @@ class Block {
         .map(([x, y]): Point => [x + bl[0], y + bl[1]])
         .map(rotateAroundPoint(bl, angle));
 
-      if (anchor[1] >= 400) {
-        for (let i = 0; i < columns.length; i++) {
-          if (anchor[0] > columns[i] && anchor[0] < columns[i] + width) {
-            isColumn = true;
-          }
-        }
-      }
+      // if (anchor[1] >= 400) {
+      //   for (let i = 0; i < columns.length; i++) {
+      //     if (anchor[0] > columns[i] && anchor[0] < columns[i] + width) {
+      //       isColumn = true;
+      //     }
+      //   }
+      // }
 
       if (isColumn) {
         this.innerPoints = specialBlock[1]

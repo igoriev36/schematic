@@ -339,6 +339,10 @@ class Scene extends React.Component<IProps, IState> {
           this.active.planeIntersection.clone().sub(this.active.clickPoint)
         );
 
+        if (this.active.normal.z === 1 || this.active.normal.z === -1) {
+          toAdd.setZ(Math.round(toAdd.z / 1.2) * 1.2);
+        }
+
         let count = 0;
         this.active.vertices.forEach(v => {
           this.vertices$.next([

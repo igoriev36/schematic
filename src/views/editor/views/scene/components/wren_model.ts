@@ -16,12 +16,6 @@ class WrenModel {
     this.geometry.dispose();
     this.geometry = new THREE.Geometry();
 
-    let geometry: THREE.Geometry = this.addFin(0);
-    // length
-    for (let i = 0; i < length - 1.2; i += 1.2) {
-      this.geometry.merge(geometry.clone().translate(0, 0, i));
-    }
-
     const shape = new THREE.Shape();
     wren.outerPoints
       .map(([x, y]) => [x / 100, y / 100])
@@ -30,22 +24,32 @@ class WrenModel {
         else shape.lineTo(x, y);
       });
 
-    const hole = new THREE.Path();
-    wren.innerPoints
-      .map(([x, y]) => [x / 100, y / 100])
-      .forEach(([x, y], index) => {
+    wren.polygons.forEach(polygon => {
+      const hole = new THREE.Path();
+      polygon.map(([x, y]) => [x / 100, y / 100]).forEach(([x, y], index) => {
         if (index == 0) hole.moveTo(x, y);
         else hole.lineTo(x, y);
       });
-    shape.holes.push(hole);
+      shape.holes.push(hole);
+    });
 
     const g = new THREE.ExtrudeGeometry(shape, {
       ...pieceExtrudeSettings,
-      amount: Math.floor(length / 1.2) * 1.2
+      amount: 0.25
+      // amount: Math.floor(length / 1.2) * 1.2
     });
-    g.translate(0, 0, -0.1);
-    // const mesh = new THREE.Mesh(g);
-    this.geometry.merge(g);
+    g.translate(0, 0, -0.225);
+    // this.geometry.merge(g);
+
+    let geometry: THREE.Geometry = this.addFin(0);
+    // length
+    let i2 = 0;
+    for (let i = 0; i < length - 1.2; i += 1.2) {
+      this.geometry.merge(geometry.clone().translate(0, 0, i));
+      this.geometry.merge(g.clone().translate(0, 0, i));
+      i2 += 1.2;
+    }
+    this.geometry.merge(g.clone().translate(0, 0, i2));
 
     this.mesh.geometry = this.geometry;
 

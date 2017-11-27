@@ -5,7 +5,8 @@ import {
   percentageOnLine,
   angle,
   rotateAroundPoint,
-  bounds
+  bounds,
+  clockwiseSort
 } from "../utils/point";
 
 import Block from "./block";
@@ -15,9 +16,15 @@ import Wall from "./wall";
 import VanillaWall from "./vanilla_wall";
 import { flatMap, flatten } from "lodash";
 
-import { loopifyInPairs, loopifyInGroups, safeIndex } from "../utils/list";
+import {
+  loopifyInPairs,
+  loopifyInGroups,
+  safeIndex,
+  sortNumeric
+} from "../utils/list";
 import { offset } from "../clipper";
 import { take } from "rxjs/operator/take";
+import { intersect } from "mathjs";
 
 const pointDistance = 15;
 const finWidth = 12.5;
@@ -46,6 +53,7 @@ class Wren {
   innerPoints: Point[];
   outerPoints: Point[];
   points: Point[];
+  originalPoints: Point[];
   normalizedPoints: Point[];
   lines: Line[];
   reinforcers: Point[][] = [];
@@ -53,14 +61,18 @@ class Wren {
   outerWalls: Point[][] = [];
   innerWalls: Point[][] = [];
   columns: number[] = [];
+  rows: number[] = [];
   // sides: Side[] = [];
   vanillaOuterWalls: VanillaWall[] = [];
   vanillaInnerWalls: VanillaWall[] = [];
   dimensions: IDimensions = {};
+  xIntersects: [Point, Point][];
+  polygons: Point[][];
 
   constructor(points) {
     // offset with 0 to normalize direction of points (clockwise or counter-clockwise)
     this.points = offset(points, { DELTA: 0 });
+    this.originalPoints = this.points.slice(0);
     const pointBounds = bounds(points);
 
     this.dimensions.width = pointBounds.maxX - pointBounds.minX;
@@ -74,10 +86,18 @@ class Wren {
       );
     }
 
+    const numRows = Math.floor(this.dimensions.height / 500);
+    for (let i = 0; i < numRows; i++) {
+      this.rows.push(
+        pointBounds.maxY - this.dimensions.height / (numRows + 1) * (i + 1)
+      );
+    }
+
     this.dimensions.footprint = this.dimensions.width * this.dimensions.height;
     this.dimensions.numSheets = Math.random();
 
     // console.log({width, height})
+    this.calculateIntersections(this.originalPoints);
 
     this.normalizedPoints = this.points.map(([x, y]): Point => [
       // x - pointBounds.offsetX, // centered point
@@ -87,18 +107,46 @@ class Wren {
     this.outerPoints = offset(points, { DELTA: finWidth });
     this.innerPoints = offset(points, { DELTA: -finWidth });
     this.lines = this.calculateLines(this.points);
-    this.calculateCorners();
-
-    this.calculateReinforcers();
+    // this.calculateCorners();
+    // this.calculateReinforcers();
     this.calculateFinPieces();
-
     // this.calculateSides(this.outerPoints);
     this.calculateVanillaWalls(
       "vanillaInnerWalls",
       offset(points, { DELTA: -finWidth - 1.8 })
     );
     this.calculateVanillaWalls("vanillaOuterWalls", this.outerPoints);
+
+    const allGuideLines = {
+      x: [-Infinity, ...this.columns.sort(sortNumeric), Infinity],
+      y: [-Infinity, ...this.rows.sort(sortNumeric), Infinity]
+    };
+    this.polygons = this.innerPolygons(allGuideLines, this.originalPoints);
   }
+
+  private innerPolygons = (allGuideLines, points) => {
+    allGuideLines.x.slice(1, -1).map(x => {
+      allGuideLines.y.slice(1, -1).map(y => {
+        points.push([x, y]);
+      });
+    });
+    let p = [];
+    const polygons = [];
+    for (let y = 1; y < allGuideLines.y.length; y++) {
+      for (let x = 1; x < allGuideLines.x.length; x++) {
+        p = points.filter(p => {
+          return (
+            Math.ceil(p[0]) >= allGuideLines.x[x - 1] &&
+            Math.floor(p[0]) <= allGuideLines.x[x] &&
+            Math.ceil(p[1]) >= allGuideLines.y[y - 1] &&
+            Math.floor(p[1]) <= allGuideLines.y[y]
+          );
+        });
+        polygons.push(offset(clockwiseSort(p), { DELTA: -finWidth }));
+      }
+    }
+    return polygons.filter(arr => arr.length > 0);
+  };
 
   private calculateLines = (_points): Line[] => {
     return loopifyInPairs(_points).map(([start, end], index) => {
@@ -234,6 +282,60 @@ class Wren {
       // this[name].push(new VanillaWall(120, sortedPoints[0], sortedPoints[1]));
       this[name].push(new VanillaWall(120, points[i], points[index(i + 1)]));
     }
+  };
+
+  private calculateIntersections = points => {
+    const pointPairs = loopifyInPairs(points);
+    const xIntersects = flatten(
+      this.columns.map(column => {
+        let intersects = [];
+        pointPairs.forEach(([start, end], index) => {
+          if (
+            (start[0] >= column && end[0] <= column) ||
+            (start[0] <= column && end[0] >= column)
+          ) {
+            intersects.push([
+              index + 1,
+              // intersect(start, end, [0, guideLine], [1000, guideLine])
+              intersect(start, end, [column, 0], [column, 1000])
+            ]);
+          }
+        });
+        return intersects;
+      })
+    ).sort(function(a, b) {
+      return b[0] - a[0];
+    });
+    xIntersects.forEach((intersect, index) => {
+      if (intersect[1]) {
+        points.splice(intersect[0], 0, [...intersect[1]]);
+      }
+    });
+
+    const yIntersects = flatten(
+      this.rows.map(row => {
+        let intersects = [];
+        pointPairs.forEach(([start, end], index) => {
+          if (
+            (start[1] >= row && end[1] <= row) ||
+            (start[1] <= row && end[1] >= row)
+          ) {
+            intersects.push([
+              index + 1,
+              intersect(start, end, [0, row], [1000, row])
+            ]);
+          }
+        });
+        return intersects;
+      })
+    ).sort(function(a, b) {
+      return b[0] - a[0];
+    });
+    yIntersects.forEach((intersect, index) => {
+      if (intersect[1]) {
+        points.splice(intersect[0], 0, [...intersect[1]]);
+      }
+    });
   };
 }
 

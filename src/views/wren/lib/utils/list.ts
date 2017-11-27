@@ -10,6 +10,8 @@ const loopify = <T>(array: T[]): T[] => {
   return [...array, array[0]];
 };
 
+export const sortNumeric = (a, b) => a - b;
+
 /**
  * Splits an array into groups that loop back to the first value
  * @example

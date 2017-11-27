@@ -44,6 +44,8 @@ class SVG extends React.Component<IProps> {
     const wren = new Wren(points);
     // console.timeEnd("wren");
     // console.log(wren);
+
+    // console.log(wren.xIntersects)
     return (
       <svg
         ref="svg"
@@ -105,15 +107,6 @@ class SVG extends React.Component<IProps> {
 
         {wren.columns.map(x => <line key={x} x1={x} x2={x} y1={0} y2={1000} />)}
 
-        {/*
-        {wren.sides.map((wall, index) => (
-          <polygon
-            className="wall"
-            key={wall.toString()}
-            points={wall.join(",")}
-          />
-        ))} */}
-
         {wren.points.map(([x, y], i) => (
           <DragPoint
             x={x}
@@ -124,6 +117,16 @@ class SVG extends React.Component<IProps> {
             key={i}
             setActivePoint={setActivePoint}
             auto={false}
+          />
+        ))}
+
+        {wren.originalPoints.map(Circle(4))}
+
+        {wren.polygons.map(polygon => (
+          <polygon
+            className="wall"
+            key={polygon.toString()}
+            points={polygon.join(",")}
           />
         ))}
 
