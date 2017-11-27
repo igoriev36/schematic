@@ -126,58 +126,51 @@ class Scene extends React.Component<IProps, IState> {
       .debounceTime(5)
       .subscribe(vertex => {
         this.wrenModel.hide();
-        this.active.model.updateGeometry();
 
         while (cutLines.children.length > 0) {
           (cutLines.children[0] as THREE.Mesh).geometry.dispose();
           cutLines.remove(cutLines.children[0]);
         }
 
-        xPlanes.forEach(x => {
-          x.intersect(this.active.model);
-          cutLines.add(x.intersectionLines);
-          // cutLines.add(x.intersectionPoints);
-        });
-
-        yPlanes.forEach(y => {
-          console.log(y.geometry.vertices);
-          y.intersect(this.active.model);
-          cutLines.add(y.intersectionLines);
-          // cutLines.add(y.intersectionPoints);
-        });
-
         this.bbox.setFromObject(this.active.model.mesh);
 
         const width = this.bbox.max.x - this.bbox.min.x;
         const numColumns = Math.floor(width / 3.6);
-
         this.xPlanes.clear();
-
         for (let i = 0; i < numColumns; i++) {
           this.xPlanes.add(width / (numColumns + 1) * (i + 1));
         }
         for (let i = 0; i < xPlanes.length; i++) {
           xPlanes[i].geometry.center();
-          xPlanes[i].geometry.translate([...this.xPlanes][i] || 0, 0, 0);
+          const v = [...this.xPlanes][i] || 0;
+          xPlanes[i].geometry.translate(v, 0, 0);
+          if (v !== 0) {
+            xPlanes[i].intersect(this.active.model);
+            cutLines.add(xPlanes[i].intersectionLines);
+          }
         }
 
         const height = this.bbox.max.y - this.bbox.min.y;
         const numRows = Math.floor(height / 4);
         this.yPlanes.clear();
-
         for (let i = 0; i < numRows; i++) {
           this.yPlanes.add(height / (numRows + 1) * (i + 1));
         }
         for (let i = 0; i < yPlanes.length; i++) {
           yPlanes[i].geometry.center();
-          yPlanes[i].geometry.translate(0, [...this.yPlanes][i] || 0, 0);
+          const v = [...this.yPlanes][i] || 0;
+          yPlanes[i].geometry.translate(0, v, 0);
+          if (v !== 0) {
+            yPlanes[i].intersect(this.active.model);
+            cutLines.add(yPlanes[i].intersectionLines);
+          }
         }
 
         // this.controls.target.copy(new THREE.Vector3(width/2,2,(this.bbox.max.z - this.bbox.min.z)/2))
         // this.controls.update()
 
         this.updateLabels();
-
+        this.active.model.updateGeometry();
         requestAnimationFrame(this.render3);
       });
 
