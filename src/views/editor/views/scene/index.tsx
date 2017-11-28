@@ -131,7 +131,9 @@ class Scene extends React.Component<IProps, IState> {
 
   setupStreams = () => {
     this.vertices$
-      .map(([vector, cloned, toAdd]) => vector.copy(cloned.add(toAdd)))
+      .map(([vector, cloned, toAdd]) => {
+        vector.copy(cloned.add(toAdd));
+      })
       .debounceTime(5)
       .subscribe(vertex => {
         this.wrenModel.hide();
@@ -342,7 +344,7 @@ class Scene extends React.Component<IProps, IState> {
         );
 
         if (this.active.normal.z === 1 || this.active.normal.z === -1) {
-          toAdd.setZ(Math.round(toAdd.z / 1.2) * 1.2);
+          toAdd.z = Math.round(toAdd.z / 1.2) * 1.2;
         }
 
         let count = 0;

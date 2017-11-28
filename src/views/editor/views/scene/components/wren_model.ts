@@ -35,10 +35,10 @@ class WrenModel {
 
     const g = new THREE.ExtrudeGeometry(shape, {
       ...pieceExtrudeSettings,
-      amount: 0.25
+      amount: 0.15
       // amount: Math.floor(length / 1.2) * 1.2
     });
-    g.translate(0, 0, -0.225);
+    g.translate(0, 0, -0.175);
     // this.geometry.merge(g);
 
     let geometry: THREE.Geometry = this.addFin(0);

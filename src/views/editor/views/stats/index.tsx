@@ -7,7 +7,6 @@ function Stats({ dimensions }) {
         <tbody>
           {[
             "footprint",
-            "insulationVolume",
             "numSheets",
             "chassisCost",
             "cncCost",

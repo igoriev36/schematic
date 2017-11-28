@@ -1,7 +1,7 @@
 import { Point, distance, rotateAroundPoint } from "../utils/point";
 
 const blockWidth = 30;
-const blockHeight = 25;
+const blockHeight = 28.5;
 const tabWidth = 18;
 const tabOffset = (blockWidth - 18) / 2;
 const tabHeight = 1.8;

@@ -27,7 +27,7 @@ import { take } from "rxjs/operator/take";
 import { intersect } from "mathjs";
 
 const pointDistance = 15;
-const finWidth = 12.5;
+const finWidth = 14.3;
 
 interface Line {
   subPoints: Point[];
@@ -128,18 +128,18 @@ class Wren {
     this.polygons = this.innerPolygons(allGuideLines, this.originalPoints);
 
     this.dimensions.footprint = `${(this.dimensions.width *
-      this.dimensions.height /
-      10000
+      length /
+      100
     ).toFixed(2)}m²`;
 
-    const frameArea = (area(this.outerPoints) - area(this.innerPoints)) / 10000;
-    this.dimensions.insulationVolume = `${(frameArea * length).toFixed(2)}m³`;
+    // const frameArea = (area(this.outerPoints) - area(this.innerPoints)) / 10000;
+    // this.dimensions.insulationVolume = `${(frameArea * length).toFixed(2)}m³`;
 
     const outlines =
       this.lines.map(l => l.length).reduce((sum, x) => sum + x, 0) / 10 * 2;
-    let sheets = outlines * length / 13;
+    let sheets = outlines * length / 14;
     sheets += this.rows.length * this.dimensions.width / 10;
-    sheets += this.columns.length * this.dimensions.height / 35;
+    sheets += this.columns.length * this.dimensions.height / 33;
     this.dimensions.numSheets = Math.ceil(sheets);
 
     this.dimensions.chassisCost = `£${(this.dimensions.numSheets * sheetCost

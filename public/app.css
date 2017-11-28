@@ -11,10 +11,10 @@ body {
   background: #fafafa;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-size: 12px;
 }
 
 #controls {
-  background: white;
   position: fixed;
   bottom: 60px;
   right: 20px;
@@ -63,7 +63,6 @@ body {
   right: 10px;
   padding: 10px;
   display: inline-block;
-  background: #FFF;
   z-index: 2;
 }
 
