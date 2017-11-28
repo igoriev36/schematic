@@ -6,7 +6,7 @@
 
 html,
 body {
-  font-family: "Helvetica Nueue", Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   color: #444;
   background: #fafafa;
   -webkit-font-smoothing: antialiased;
@@ -67,8 +67,11 @@ body {
   z-index: 2;
 }
 
-th {
+th, td {
   text-align: right;
+}
+th {
+  padding-right: 10px;
 }
 
 #toggler {

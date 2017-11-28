@@ -22,7 +22,7 @@ import {
   safeIndex,
   sortNumeric
 } from "../utils/list";
-import { offset } from "../clipper";
+import { offset, area } from "../clipper";
 import { take } from "rxjs/operator/take";
 import { intersect } from "mathjs";
 
@@ -43,8 +43,12 @@ interface IDimensions {
   width?: number;
   height?: number;
   length?: number;
-  footprint?: number;
+  footprint?: string;
   numSheets?: number;
+  chassisCost?: string;
+  cncCost?: string;
+  cncTime?: string;
+  insulationVolume?: string;
 }
 
 const maxSpan = 360;
@@ -69,8 +73,7 @@ class Wren {
   xIntersects: [Point, Point][];
   polygons: Point[][];
 
-  constructor(points) {
-    console.log("WREN");
+  constructor(points, length = 1) {
     // offset with 0 to normalize direction of points (clockwise or counter-clockwise)
     this.points = offset(points, { DELTA: 0 });
     this.originalPoints = this.points.slice(0);
@@ -78,7 +81,7 @@ class Wren {
 
     this.dimensions.width = pointBounds.maxX - pointBounds.minX;
     this.dimensions.height = pointBounds.maxY - pointBounds.minY;
-    this.dimensions.length = Math.random();
+    this.dimensions.length = length;
 
     const numColumns = Math.floor(this.dimensions.width / maxSpan);
     for (let i = 0; i < numColumns; i++) {
@@ -94,8 +97,8 @@ class Wren {
       );
     }
 
-    this.dimensions.footprint = this.dimensions.width * this.dimensions.height;
-    this.dimensions.numSheets = Math.random();
+    const sheetCost = 22.3;
+    const cncCost = 20.0;
 
     // console.log({width, height})
     this.calculateIntersections(this.originalPoints);
@@ -123,6 +126,30 @@ class Wren {
       y: [-Infinity, ...this.rows.sort(sortNumeric), Infinity]
     };
     this.polygons = this.innerPolygons(allGuideLines, this.originalPoints);
+
+    this.dimensions.footprint = `${(this.dimensions.width *
+      this.dimensions.height /
+      10000
+    ).toFixed(2)}m²`;
+
+    const frameArea = (area(this.outerPoints) - area(this.innerPoints)) / 10000;
+    this.dimensions.insulationVolume = `${(frameArea * length).toFixed(2)}m³`;
+
+    const outlines =
+      this.lines.map(l => l.length).reduce((sum, x) => sum + x, 0) / 10 * 2;
+    let sheets = outlines * length / 13;
+    sheets += this.rows.length * this.dimensions.width / 10;
+    sheets += this.columns.length * this.dimensions.height / 35;
+    this.dimensions.numSheets = Math.ceil(sheets);
+
+    this.dimensions.chassisCost = `£${(this.dimensions.numSheets * sheetCost
+    ).toFixed(2)}`;
+    this.dimensions.cncCost = `£${(this.dimensions.numSheets * cncCost).toFixed(
+      2
+    )}`;
+    this.dimensions.cncTime = `${Math.ceil(
+      this.dimensions.numSheets / 20
+    )} days`;
   }
 
   private innerPolygons = (allGuideLines, points) => {

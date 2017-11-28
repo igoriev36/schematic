@@ -180,7 +180,7 @@ class Scene extends React.Component<IProps, IState> {
 
         // this.controls.target.copy(new THREE.Vector3(width/2,2,(this.bbox.max.z - this.bbox.min.z)/2))
         // this.controls.update()
-
+        // this.recalculateModel()
         this.updateLabels();
         requestAnimationFrame(this.render3);
       });
@@ -269,13 +269,13 @@ class Scene extends React.Component<IProps, IState> {
       this.props.colors.faceHighlight
     );
 
-    const light = new THREE.HemisphereLight(0xfafafa, 0xeeeeee);
-    this.scene.add(light);
-    const light2 = new THREE.PointLight(0xffffff);
-    light2.position.y = 3;
-    light2.position.x = 3;
-    light2.lookAt(new THREE.Vector3(0, 0, 0));
-    this.scene.add(light2);
+    // const light = new THREE.HemisphereLight(0xfafafa, 0xeeeeee);
+    // this.scene.add(light);
+    // const light2 = new THREE.PointLight(0xffffff);
+    // light2.position.y = 3;
+    // light2.position.x = 3;
+    // light2.lookAt(new THREE.Vector3(0, 0, 0));
+    // this.scene.add(light2);
 
     this.camera.position.x = 10;
     this.camera.position.y = 15;
@@ -295,6 +295,8 @@ class Scene extends React.Component<IProps, IState> {
       this.updateLabels();
       requestAnimationFrame(this.render3);
     });
+
+    this.recalculateModel();
 
     // document.body.appendChild(rendererStats.domElement);
 
@@ -456,26 +458,22 @@ class Scene extends React.Component<IProps, IState> {
     event.preventDefault();
     if (!this.active.intersection) return;
 
+    const middle =
+      this.bbox.min.x + (this.bbox.max.x - this.bbox.min.x) / 2 - 0.00001;
+
     let newPos;
     if (this.active.roofType === Roof.FLAT) {
       this.active.roofType = Roof.PITCH;
       this.active.model.geometry.vertices
-        .filter(v => Math.abs(v.y - this.bbox.max.y) < 0.001)
+        // .filter(v => Math.abs(v.y - this.bbox.max.y) < 0.01)
         .filter(
           v =>
-            Math.abs(v.x - this.bbox.min.x) > 0.001 &&
-            Math.abs(v.x - this.bbox.max.x) > 0.001
+            v.y > 0.1 &&
+            Math.abs(v.x - this.bbox.min.x) > 0.1 &&
+            Math.abs(v.x - this.bbox.max.x) > 0.1
         )
         .map(v => {
-          v.copy(
-            new THREE.Vector3(
-              this.bbox.min.x +
-                (this.bbox.max.x - this.bbox.min.x) / 2 -
-                0.00001,
-              v.y + 1.1,
-              v.z
-            )
-          );
+          v.copy(new THREE.Vector3(middle, this.bbox.max.y + 1.1, v.z));
         });
     } else {
       this.active.roofType = Roof.FLAT;
@@ -483,7 +481,7 @@ class Scene extends React.Component<IProps, IState> {
 
       const vs = this.active.model.geometry.vertices.filter(v => v.y > 0.1);
       const newY = Math.min(...vs.map(v => v.y));
-      vs.map(v => v.setY(newY));
+      vs.map(v => v.copy(new THREE.Vector3(v.x, newY, v.z)));
     }
 
     this.vertices$.next([
@@ -492,7 +490,11 @@ class Scene extends React.Component<IProps, IState> {
       new THREE.Vector3(0, 0, 0)
     ]);
 
-    requestAnimationFrame(this.render3);
+    setTimeout(() => {
+      this.recalculateModel();
+      this.updateLabels();
+      requestAnimationFrame(this.render3);
+    }, 100);
   };
 
   recalculateModel = () => {
@@ -505,7 +507,7 @@ class Scene extends React.Component<IProps, IState> {
       .map(v => [v.x * 100, v.y * 100]);
     this.wrenModel.container.position.copy(this.bbox.min);
     this.wrenModel.update(
-      new Wren(this.points),
+      new Wren(this.points, this.bbox.max.z - this.bbox.min.z),
       this.bbox.max.z - this.bbox.min.z
     );
     this.wrenModel.mesh.position.x = -this.bbox.min.x;

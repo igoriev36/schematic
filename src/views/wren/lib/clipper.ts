@@ -33,3 +33,10 @@ export const offset = (
 
   return OFFSET_POINTS;
 };
+
+export function area(outline) {
+  const outlinePoints = outline.map(toClipper);
+  const shape = new Shape([outlinePoints], true);
+  const rawArea = shape.totalArea();
+  return Math.abs(rawArea / multiplier) / multiplier;
+}
