@@ -8,9 +8,10 @@ function Stats({ dimensions }) {
           {[
             "footprint",
             "numSheets",
+            "cncTime",
             "chassisCost",
             "cncCost",
-            "cncTime"
+            "chassisTotal"
           ].map(key => (
             <tr key={key}>
               <th>{key}</th>

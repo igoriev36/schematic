@@ -48,6 +48,7 @@ interface IDimensions {
   chassisCost?: string;
   cncCost?: string;
   cncTime?: string;
+  chassisTotal?: string;
   insulationVolume?: string;
 }
 
@@ -98,7 +99,7 @@ class Wren {
     }
 
     const sheetCost = 22.3;
-    const cncCost = 20.0;
+    const cncCost = 25.0;
 
     // console.log({width, height})
     this.calculateIntersections(this.originalPoints);
@@ -142,11 +143,11 @@ class Wren {
     sheets += this.columns.length * this.dimensions.height / 33;
     this.dimensions.numSheets = Math.ceil(sheets);
 
-    this.dimensions.chassisCost = `£${(this.dimensions.numSheets * sheetCost
-    ).toFixed(2)}`;
-    this.dimensions.cncCost = `£${(this.dimensions.numSheets * cncCost).toFixed(
-      2
-    )}`;
+    const _chassisCost = this.dimensions.numSheets * sheetCost;
+    const _cncCost = this.dimensions.numSheets * cncCost;
+    this.dimensions.chassisCost = `£${_chassisCost.toFixed(2)}`;
+    this.dimensions.cncCost = `£${_cncCost.toFixed(2)}`;
+    this.dimensions.chassisTotal = `£${(_chassisCost + _cncCost).toFixed(2)}`;
     this.dimensions.cncTime = `${Math.ceil(
       this.dimensions.numSheets / 20
     )} days`;
